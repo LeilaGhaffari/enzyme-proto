@@ -1,0 +1,9 @@
+hello
+*.bc
+*.s
+*.ll
+*.native
+*.out
+*.exe
+*.json
+*.log
