@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 void foo(double *x_in, double *x_out) {
-    x_out[0] = x_in[0] * x_in[0];
+    x_out[0] = x_in[0] * x_in[0] + 5 * x_in[0] + 3.;
 }
 
 
