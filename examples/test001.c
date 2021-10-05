@@ -51,8 +51,6 @@ opt output1.ll -O2 -o output_opt1.ll -S
 // OR EVEN EASIER WITH ALL OPTIMIZATIONS
 /*
 
-clang test1.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-
-./a.out
+clang test001.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops; ./a.out
 
 */

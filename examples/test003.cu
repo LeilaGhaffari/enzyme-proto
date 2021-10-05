@@ -1,4 +1,4 @@
-// This is the CUDA version of test2.cpp
+// This is the CUDA version of test002.cpp
 
 #include <stdio.h>
 
@@ -63,8 +63,6 @@ int main() {
 
 /*
 
-clang test3.cu -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops -fPIC --cuda-gpu-arch=sm_70 -lcudart -L/usr/local/cuda-11.3/lib64
-
-./a.out
+clang test003.cu -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops -fPIC --cuda-gpu-arch=sm_70 -lcudart -L/usr/local/cuda-11.3/lib64; ./a.out
 
 */
