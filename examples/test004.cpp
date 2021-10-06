@@ -1,5 +1,15 @@
-// A copy of "Enzyme/enzyme/test/Integration/ReverseMode/virtualshadow.cpp"
-//  to split pushforward and pullback 
+ /*
+
+ Copied from "Enzyme/enzyme/test/Integration/ReverseMode/virtualshadow.cpp".
+
+ It creates both the augmented forward pass and reverse pass, but does so to 
+ create the manual "shadow" memory of a function pointer. 
+ This shadow function pointer is used when computing the combined forward and 
+ reverse pass of the foo function. Since we want the combined forward+reverse 
+ of foo, we use autodiff.
+ 
+*/
+
 #include <stdio.h>
 
 struct S {
