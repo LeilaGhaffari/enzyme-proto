@@ -104,20 +104,84 @@ int main() {
     double mu = TwoMu / 2;
     double Kbulk = E / (3*(1 - 2*nu)); // Bulk Modulus
     double lambda = (3*Kbulk - TwoMu) / 3;
-    double E2work[6] = {0., 0., 0., 0., 0., 0.};
 
+    double E2work[6] = {0., 0., 0., 0., 0., 0.};
     E2work[0] = 0.5895232828911128;
-    E2work[1] = 0.23624917381627597;
+    E2work[1] = 0.2362491738162759;
     E2work[2] = 0.9793730522395296;
     E2work[3] = 0.2190993957421843;
-    E2work[4] = 0.012650321074792581;
+    E2work[4] = 0.0126503210747925;
     E2work[5] = 0.6570956167695403;
 
     double Swork[6];
     computeS(lambda, mu, E2work, Swork);
 
-    printf("Swork[] =\n");
-    for (int i=0; i<6; i++) printf("          %.17lf\n", Swork[i]);
+    double deltaEwork[6] = {0., 0., 0., 0., 0., 0.};
+    deltaEwork[0] = 0.9681576729097205;
+    deltaEwork[1] = 0.7994338113484318;
+    deltaEwork[2] = 0.2755183472001872;
+    deltaEwork[3] = 0.6500440500146469;
+    deltaEwork[4] = 0.0593948875992271;
+    deltaEwork[5] = 0.6002528007029311;
+
+    double deltaE[3][3] = {{deltaEwork[0], deltaEwork[5], deltaEwork[4]},
+                           {deltaEwork[5], deltaEwork[1], deltaEwork[3]},
+                           {deltaEwork[4], deltaEwork[3], deltaEwork[2]}
+                          };
+
+    double E2[3][3] = {{E2work[0], E2work[5], E2work[4]},
+                       {E2work[5], E2work[1], E2work[3]},
+                       {E2work[4], E2work[3], E2work[2]}
+                      };   
+
+    double C[3][3] = {{1 + E2[0][0], E2[0][1], E2[0][2]},
+                              {E2[0][1], 1 + E2[1][1], E2[1][2]},
+                              {E2[0][2], E2[1][2], 1 + E2[2][2]}
+                             };             
+    double Cinvwork[6];
+    double detCm1 = computeDetCM1(E2work);
+    computeMatinvSym(C, detCm1+1, Cinvwork);
+    double logJ = log1p_series_shifted(detCm1) / 2.;
+
+    double C_inv[3][3] = {{Cinvwork[0], Cinvwork[5], Cinvwork[4]},
+                          {Cinvwork[5], Cinvwork[1], Cinvwork[3]},
+                          {Cinvwork[4], Cinvwork[3], Cinvwork[2]}
+                         };
+
+    double Cinv_contract_E = 0;
+    for (int j = 0; j < 3; j++)
+      for (int k = 0; k < 3; k++)
+        Cinv_contract_E += C_inv[j][k]*deltaE[j][k];
+
+    // -- deltaE*C_inv
+    double deltaECinv[3][3];
+    for (int j = 0; j < 3; j++)
+      for (int k = 0; k < 3; k++) {
+        deltaECinv[j][k] = 0;
+        for (int m = 0; m < 3; m++)
+          deltaECinv[j][k] += deltaE[j][m]*C_inv[m][k];
+      }
+    // -- intermediate deltaS = C_inv*deltaE*C_inv
+    double deltaS[3][3];
+    for (int j = 0; j < 3; j++)
+      for (int k = 0; k < 3; k++) {
+        deltaS[j][k] = 0;
+        for (int m = 0; m < 3; m++)
+          deltaS[j][k] += C_inv[j][m]*deltaECinv[m][k];
+      }
+    // -- deltaS = lambda(C_inv:deltaE)C_inv - 2(lambda*log(J)-mu)*(intermediate)
+    for (int j = 0; j < 3; j++)
+      for (int k = 0; k < 3; k++)
+        deltaS[j][k] = lambda*Cinv_contract_E*C_inv[j][k] -
+                       2.*(lambda*logJ-mu)*deltaS[j][k];
+
+    printf("deltaS[] =\n");
+    for (int i=0; i<3; i++) printf("%.6lf ", deltaS[0][i]);
+    printf("\n");
+    for (int i=0; i<3; i++) printf("%.6lf ", deltaS[1][i]);
+    printf("\n");
+    for (int i=0; i<3; i++) printf("%.6lf ", deltaS[2][i]);
+    printf("\n");
 
     return 0;
 }
@@ -125,12 +189,10 @@ int main() {
 /*
 Compile:
     clang voigt.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-Expected result for Swork:
-Swork[] =
-          0.09804135870174864
-          0.09264024123615378
-          0.10429999576217747
-          0.00245763855177966
-          -0.00092774955776693
-          0.00938277457328471
+
+deltaS[] =
+0.169671 -0.085117 0.003474 
+-0.085117 0.219554 -0.010067 
+0.003474 -0.010067 0.099308 
+
 */
