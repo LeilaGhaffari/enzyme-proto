@@ -7,3 +7,4 @@ hello
 *.exe
 *.json
 *.log
+.ipynb_checkpoints
