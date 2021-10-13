@@ -129,20 +129,6 @@ int main() {
       double dSwork[VECSIZE]  = {0., 0., 0., 0., 0., 0.}; dSwork[i] = 1.;
       grad_S(Swork, dSwork, E2work, J[i], lambda, mu);
   }
-  
-  printf("\n\nJ = dS/dE =\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t%.12lf", J[0][i]);
-  printf("\n\n\n\n\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t%.12lf", J[1][i]);
-  printf("\n\n\n\n\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t%.12lf", J[2][i]);
-  printf("\n\n\n\n\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t%.12lf", J[3][i]);
-  printf("\n\n\n\n\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t%.12lf", J[4][i]);
-  printf("\n\n\n\n\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t%.12lf", J[5][i]);
-  printf("\n\n\n\n\n\n");
 
   double deltaEwork[VECSIZE] = {0., 0., 0., 0., 0., 0.};
   deltaEwork[0] = 0.9681576729097205;
@@ -164,16 +150,19 @@ int main() {
                          {deltaS_[4], deltaS_[3], deltaS_[2]}
                         };
 
-  printf("deltaSwork =\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf \n", deltaS_[i]);
+  printf("\n\nSwork       = ");
+  for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", Swork[i]);
 
-  printf("\n\ndeltaS[] =\n\n");
-  for (int i=0; i<3; i++) printf("\t%.12lf", deltaS[0][i]);
-  printf("\n\n\n");
-  for (int i=0; i<3; i++) printf("\t%.12lf", deltaS[1][i]);
-  printf("\n\n\n");
-  for (int i=0; i<3; i++) printf("\t%.12lf", deltaS[2][i]);
-  printf("\n\n\n");
+  printf("\n\ndeltaSwork  = ");
+  for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", deltaS_[i]);
+
+  printf("\n\ndeltaS      =\n\n");
+  for (int i=0; i<3; i++) printf("\t\t%.12lf", deltaS[0][i]);
+  printf("\n\n");
+  for (int i=0; i<3; i++) printf("\t\t%.12lf", deltaS[1][i]);
+  printf("\n\n");
+  for (int i=0; i<3; i++) printf("\t\t%.12lf", deltaS[2][i]);
+  printf("\n\n");
 
   return 0;
 }
@@ -184,25 +173,16 @@ Compile:
 
 Output:
 
-J = dS/dE =
-	0.070811278588	0.078553999712	0.036320385437	-0.016900816336	0.007575870391	-0.076618397154
-	0.078553999712	0.121783685988	0.047860795986	-0.026318621010	0.010118091258	-0.100479253891
-	0.036320385437	0.047860795986	0.028925623013	-0.012826552227	0.004841976517	-0.039468423763
-	-0.008450408168	-0.013159310505	-0.006413276113	0.014335133600	-0.005823943286	0.010765810508
-	0.003787935196	0.005059045629	0.002420988259	-0.005823943286	0.009342583924	-0.005682532186
-	-0.038309198577	-0.050239626945	-0.019734211882	0.010765810508	-0.005682532186	0.055760529871
+Swork       = 	   0.098041	   0.092640	   0.104300	   0.002458	   -0.000928	   0.009383
 
-deltaSwork =
-	   0.169671 
-	   0.219554 
-	   0.099307 
-	   -0.010067 
-	   0.003474 
-	   -0.085117 
+deltaSwork  = 	   0.169671	   0.219554	   0.099307	   -0.010067	   0.003474	   -0.085117
 
-deltaS[] =
-	0.169670848078	-0.085117173016	0.003473687038
-	-0.085117173016	0.219553855108	-0.010067073475
-	0.003473687038	-0.010067073475	0.099307342055
+deltaS      =
+
+		0.169670848078		-0.085117173016		0.003473687038
+
+		-0.085117173016		0.219553855108		-0.010067073475
+
+		0.003473687038		-0.010067073475		0.099307342055
 
 */

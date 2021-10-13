@@ -175,7 +175,11 @@ int main() {
         deltaS[j][k] = lambda*Cinv_contract_E*C_inv[j][k] -
                        2.*(lambda*logJ-mu)*deltaS[j][k];
 
-    printf("deltaS[] =\n");
+
+    printf("\n\nSwork =\n");
+    for (int i=0; i<6; i++) printf("\t   %.6lf", Swork[i]);
+
+    printf("\n\ndeltaS[] =\n");
     for (int i=0; i<3; i++) printf("%.6lf ", deltaS[0][i]);
     printf("\n");
     for (int i=0; i<3; i++) printf("%.6lf ", deltaS[1][i]);
@@ -189,6 +193,11 @@ int main() {
 /*
 Compile:
     clang voigt.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
+
+Output:
+
+Swork =
+	   0.098041	   0.092640	   0.104300	   0.002458	   -0.000928	   0.009383
 
 deltaS[] =
 0.169671 -0.085117 0.003474 
