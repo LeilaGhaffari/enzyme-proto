@@ -152,14 +152,11 @@ int main() {
   deltaEwork[4] = 0.0593948875992271;
   deltaEwork[5] = 0.6002528007029311;
 
-  double deltaE2work[VECSIZE];
-  for (int i=0; i<VECSIZE; i++) deltaE2work [i] = 2 * deltaEwork[i];
-
   double deltaS_[VECSIZE];
   for (int i=0; i<VECSIZE; i++) {
     deltaS_[i] = 0;
     for (int j=0; j<VECSIZE; j++)
-      deltaS_[i] += J[i][j] * deltaE2work[j];  
+      deltaS_[i] += J[i][j] * 2. * deltaEwork[j]; // we need deltaE2work = 2 .* deltaEwork 
   }
 
   double deltaS[3][3] = {{deltaS_[0], deltaS_[5], deltaS_[4]},
