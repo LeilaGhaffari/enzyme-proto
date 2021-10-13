@@ -138,23 +138,23 @@ int main() {
   deltaEwork[4] = 0.0593948875992271;
   deltaEwork[5] = 0.6002528007029311;
 
-  double deltaS_[VECSIZE];
+  double deltaSwork[VECSIZE];
   for (int i=0; i<VECSIZE; i++) {
-    deltaS_[i] = 0;
+    deltaSwork[i] = 0;
     for (int j=0; j<VECSIZE; j++)
-      deltaS_[i] += J[i][j] * 2. * deltaEwork[j]; // we need deltaE2work = 2 .* deltaEwork 
+      deltaSwork[i] += J[i][j] * 2. * deltaEwork[j]; // we need deltaE2work = 2 .* deltaEwork 
   }
 
-  double deltaS[3][3] = {{deltaS_[0], deltaS_[5], deltaS_[4]},
-                         {deltaS_[5], deltaS_[1], deltaS_[3]},
-                         {deltaS_[4], deltaS_[3], deltaS_[2]}
+  double deltaS[3][3] = {{deltaSwork[0], deltaSwork[5], deltaSwork[4]},
+                         {deltaSwork[5], deltaSwork[1], deltaSwork[3]},
+                         {deltaSwork[4], deltaSwork[3], deltaSwork[2]}
                         };
 
   printf("\n\nSwork       = ");
   for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", Swork[i]);
 
   printf("\n\ndeltaSwork  = ");
-  for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", deltaS_[i]);
+  for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", deltaSwork[i]);
 
   printf("\n\ndeltaS      =\n\n");
   for (int i=0; i<3; i++) printf("\t\t%.12lf", deltaS[0][i]);
