@@ -56,10 +56,23 @@ int main() {
 }
 
 /*
+clang test011.c -S -emit-llvm -o input.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
+
+opt input.ll -load=/home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/LLVMEnzyme-12.so -enzyme -o output.ll -S
+
+opt output.ll -O2 -o output_opt.ll -S
+
+clang output_opt.ll -o a_opt.exe; ./a_opt.exe
+
+// OR
+
+clang output.ll -o a.exe; ./a.exe 
+
+//// A shorter path:
 
 clang test011.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
-Output:
+//// Output:
 
 dx =
 	2.613940 	0.000000 	0.000000 

@@ -36,7 +36,7 @@ int main() {
 
 /*
 
-/home/linuxbrew/.linuxbrew/bin/clang test1.c -S -emit-llvm -o input1.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
+/home/linuxbrew/.linuxbrew/bin/clang test001.c -S -emit-llvm -o input1.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
 
 opt input1.ll -load=/home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/LLVMEnzyme-12.so -enzyme -o output1.ll -S
 
