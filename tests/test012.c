@@ -1,4 +1,4 @@
-// The split version of test008
+// Separate reverse and forward calls in test011
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,13 +17,13 @@ int enzyme_const;
 int enzyme_allocated;
 
 void grad_foo_fwd(double *u, double *du, double *x, double *dx, double mu, void *data) {
-    //int size = __enzyme_augmentsize((void *)foo, enzyme_dup, enzyme_dup, enzyme_const);
-    __enzyme_augmentfwd((void *)foo, enzyme_allocated, 8, enzyme_tape, data, u, du, x, dx, mu);
+    int size = __enzyme_augmentsize((void *)foo, enzyme_dup, enzyme_dup, enzyme_const);
+    __enzyme_augmentfwd((void *)foo, enzyme_allocated, size, enzyme_tape, data, u, du, x, dx, mu);
 }
 
 void grad_foo_rev(double *u, double *du, double *x, double *dx, double mu, void *data) {
-    //int size = __enzyme_augmentsize((void *)foo, enzyme_dup, enzyme_dup, enzyme_const);
-    __enzyme_reverse((void *)foo, enzyme_allocated, 8, enzyme_tape, data, u, du, x, dx, mu);
+    int size = __enzyme_augmentsize((void *)foo, enzyme_dup, enzyme_dup, enzyme_const);
+    __enzyme_reverse((void *)foo, enzyme_allocated, size, enzyme_tape, data, u, du, x, dx, mu);
 }
 
 int main() {
@@ -43,7 +43,6 @@ int main() {
 
     void *tape[3];
     for (int i=0; i<3; i++) tape[i] = malloc(size);  
-    // for (int i=0; i<3; i++) tape[i] = malloc(8);
 
     for (int i=0; i<3; i++) {
         double du[3]  = {0., 0., 0.}; du[i] = 1;
