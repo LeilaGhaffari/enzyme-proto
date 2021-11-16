@@ -1,4 +1,4 @@
-// Expand test012 to get a tape[]
+// Expand test013 to get a tape[][]
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,27 +34,29 @@ int main() {
     for (int j=0; j<2; j++) for (int i=0; i<3; i++) for (int k=0; k<3; k++) J[i][k][j] = 0.;
 
     double mu = 2;
-    void *tape;
+    void *tape[2];
 
     for (int j=0; j<2; j++) {
 
       int size = __enzyme_augmentsize((void *)foo, enzyme_dup, enzyme_dup, enzyme_const);
-      tape = malloc(size);
+      tape[j] = malloc(size); 
 
       double u[3];
       double dx[3][3] = { {0., 0., 0.},
                           {0., 0., 0.},
                           {0., 0., 0.}
                         };
-
-      grad_foo_fwd(u, (double *)NULL, x[j], (double *)NULL, mu, tape);
+  
+      grad_foo_fwd(u, (double *)NULL, x[j], (double *)NULL, mu, tape[j]);
 
   
       for (int i=0; i<3; i++) {
           double du[3]  = {0., 0., 0.}; du[i] = 1;
-          grad_foo_rev((double *)NULL, du, (double *)NULL, dx[i], mu, tape);
+          grad_foo_rev((double *)NULL, du, (double *)NULL, dx[i], mu, tape[j]);
           for (int k=0; k<3; k++) J[i][k][j] = dx[i][k];
       }
+       
+      free(tape[j]);
 
       printf("\n\n");
       for (int i=0; i<3; i++) printf("\t%.6lf ", J[0][i][j]);
@@ -68,26 +70,12 @@ int main() {
       for (int i=0; i<3; i++) printf("\tu(%f) = %f\n", x[j][i], u[i]);
       printf("\n\n");
     }
-    free(tape);
     return 0;
 }
 
 /*
-clang test013.c -S -emit-llvm -o input.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
 
-opt input.ll -load=/home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/LLVMEnzyme-12.so -enzyme -o output.ll -S
-
-opt output.ll -O2 -o output_opt.ll -S
-
-clang output_opt.ll -o a_opt.exe; ./a_opt.exe
-
-// OR
-
-clang output.ll -o a.exe; ./a.exe 
-
-//// A shorter path:
-
-clang test013.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
+clang test014.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 //// Output:
 
