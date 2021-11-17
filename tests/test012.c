@@ -85,7 +85,7 @@ clang output.ll -o a.exe; ./a.exe
 
 //// A shorter path:
 
-clang test012.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
+clang test012.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 //// Output:
 
