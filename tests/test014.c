@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 void foo(double *u, double *x, double mu) {
     for (int i = 0; i<3; i++) u[i] = mu * (x[i] * x[i]);
@@ -21,8 +22,11 @@ void grad_foo_fwd(double *u, double *du, double *x, double *dx, double mu, void 
     __enzyme_augmentfwd((void *)foo, enzyme_allocated, sizeof(tape[0]), enzyme_tape, tape, enzyme_nofree, u, du, x, dx, enzyme_const, mu);
 }
 
-void grad_foo_rev(double *u, double *du, double *x, double *dx, double mu, void *tape) {
-    __enzyme_reverse((void *)foo, enzyme_allocated, sizeof(tape[0]), enzyme_tape, tape, enzyme_nofree, u, du, x, dx, enzyme_const, mu);
+void grad_foo_rev(double *u, double *du, double *x, double *dx, double mu, void *tape, bool no_free) {
+    if (no_free)
+      __enzyme_reverse((void *)foo, enzyme_allocated, sizeof(tape[0]), enzyme_tape, tape, enzyme_nofree, u, du, x, dx, enzyme_const, mu);
+    else 
+      __enzyme_reverse((void *)foo, enzyme_allocated, sizeof(tape[0]), enzyme_tape, tape, u, du, x, dx, enzyme_const, mu);
 }
 
 int main() {
@@ -30,8 +34,8 @@ int main() {
     double x[2][3] = { {0.653484990079922, 0.744572635699587, 0.23483535966444968},
                        {2.*0.653484990079922, 2.*0.744572635699587, 2.*0.23483535966444968}
                      };
-    double J[3][3][2];
-    for (int j=0; j<2; j++) for (int i=0; i<3; i++) for (int k=0; k<3; k++) J[i][k][j] = 0.;
+    double J[3][3][2] = {{{0.}}};
+    //for (int j=0; j<2; j++) for (int i=0; i<3; i++) for (int k=0; k<3; k++) J[i][k][j] = 0.;
 
     double mu = 2;
     void *tape[2];
@@ -42,21 +46,27 @@ int main() {
       tape[j] = malloc(size); 
 
       double u[3];
-      double dx[3][3] = { {0., 0., 0.},
-                          {0., 0., 0.},
-                          {0., 0., 0.}
-                        };
+      double dx[3][3] = {{0.}};
   
       grad_foo_fwd(u, (double *)NULL, x[j], (double *)NULL, mu, tape[j]);
 
-  
+      bool no_free = true;
       for (int i=0; i<3; i++) {
-          double du[3]  = {0., 0., 0.}; du[i] = 1;
-          grad_foo_rev((double *)NULL, du, (double *)NULL, dx[i], mu, tape[j]);
+          double du[3]  = {0.}; du[i] = 1;
+          grad_foo_rev((double *)NULL, du, (double *)NULL, dx[i], mu, tape[j], no_free);
           for (int k=0; k<3; k++) J[i][k][j] = dx[i][k];
       }
        
+      
+      {   
+          // Call without enzyme_nofree to free up the allocated memory
+          no_free = false;
+          double du = 1;
+          double dx[3]  = {0.};
+          grad_foo_rev((double *)NULL, &du, (double *)NULL, &dx[0], mu, tape[j], no_free);
+      }
       free(tape[j]);
+
 
       printf("\n\n");
       for (int i=0; i<3; i++) printf("\t%.6lf ", J[0][i][j]);
