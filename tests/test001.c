@@ -20,7 +20,7 @@ int main() {
   We can generate LLVM from this code by calling clang as follows. 
   Note that clang should be the path to whatever clang you built Enzyme against.
 
-    clang test1.c -S -emit-llvm -o input.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
+    clang test001.c -S -emit-llvm -o input.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
 
   where
     -S -emit-llvm   -> we want to emit LLVM bitcode rather than an executable
@@ -36,13 +36,13 @@ int main() {
 
 /*
 
-/home/linuxbrew/.linuxbrew/bin/clang test001.c -S -emit-llvm -o input1.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
+clang test001.c -S -emit-llvm -o input1.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
 
-opt input1.ll -load=/home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/LLVMEnzyme-12.so -enzyme -o output1.ll -S
+opt input1.ll -load=/home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -enzyme -o output1.ll -S
 
 opt output1.ll -O2 -o output_opt1.ll -S
 
-/home/linuxbrew/.linuxbrew/bin/clang output_opt1.ll -o a1.exe
+clang output_opt1.ll -o a1.exe
 
 ./a1.exe
 
