@@ -10,7 +10,7 @@ void __enzyme_augmentfwd(void *, ...);
 void __enzyme_reverse(void *, ...);
 int enzyme_dup, enzyme_allocated, enzyme_tape, enzyme_const, enzyme_nofree;
 
-void square(double *x, double *y, double *A) {
+void square(const double *x, double *y, double *A) {
     double a = A[0];
     y[0] = a*a*a + a*a*x[0] + a/2.;
     y[1] = a*a*a + a*a*x[1] + a/2.;
@@ -23,7 +23,7 @@ int getTapeSize() {
   return __enzyme_augmentsize((void *)square, enzyme_const, enzyme_dup, enzyme_dup);
 }
 
-void fwd_a(double *x, double *y, double *a, void *tape) {  
+void fwd_a(const double *x, double *y, double *a, void *tape) {  
     __enzyme_augmentfwd((void*)square, 
                         enzyme_allocated, sizeof(tape[0]), 
                         enzyme_tape, tape, 
@@ -33,7 +33,7 @@ void fwd_a(double *x, double *y, double *a, void *tape) {
                        );
 }
 
-void rev_a(double *x, double *y_, double *a_, void *tape, bool free) {
+void rev_a(const double *x, double *y_, double *a_, void *tape, bool free) {
     if (free)
       __enzyme_reverse((void*)square, 
                        enzyme_allocated, sizeof(tape[0]), 
@@ -54,7 +54,7 @@ void rev_a(double *x, double *y_, double *a_, void *tape, bool free) {
 
 int main() {
     // Declarations
-    double x[] = {.5, 2.5, 5., 8., 10.};
+    const double x[] = {.5, 2.5, 5., 8., 10.};
     double y[5];
     void *tape;
 
