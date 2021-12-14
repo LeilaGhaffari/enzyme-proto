@@ -87,53 +87,6 @@ void computeGrad_q(double grad_q[3][5], double *t, double *x, double *y, double 
                       z, &grad_q[2][i]);
   }
 }
- // -- Temperature: T =  (E / rho - (u u)/2 - g z) / cv
-void computeT(double *T, double *t, double *x, double *y, double *z, double g, double cv) {
-  // Compute state variables                
-  double q[5];
-  ExactSolution(q, t, x, y, z);
-  double rho = q[0];
-  double u[3] = {q[0]/rho, q[1]/rho, q[2]/rho};
-  double E = q[4];
-
-  // Kinetic Energy
-  double kinetic_energy = (u[0]*u[0] + u[1]*u[1] + u[2]*u[2]) / 2.;
-
-  // Compute T
-  T[0] =  (E/rho - kinetic_energy - g*z[0]) / cv;
-}
-
-// -- Grad_T
-void computeGrad_T(double dT[3], double *t, double *x, double *y, double *z, double g, double cv) {
-  double T[0], T_ = 1.;
-  // Derivative wrt x
-  __enzyme_autodiff((void *)computeT,
-                    T, &T_,
-                    enzyme_const, t,
-                    x, &dT[0],
-                    enzyme_const, y,
-                    enzyme_const, z,
-                    enzyme_const, g,
-                    enzyme_const, cv);
-  // Derivative wrt y
-  __enzyme_autodiff((void *)computeT,
-                    T, &T_,
-                    enzyme_const, t,
-                    enzyme_const, x,
-                    y, &dT[1],
-                    enzyme_const, z,
-                    enzyme_const, g,
-                    enzyme_const, cv);
-  // Derivative wrt z
-  __enzyme_autodiff((void *)computeT,
-                    T, &T_,
-                    enzyme_const, t,
-                    enzyme_const, x,
-                    enzyme_const, y,
-                    z, &dT[2],
-                    enzyme_const, g,
-                    enzyme_const, cv);
-}
 
 void computeF(double f[3][5], double *t, double *x, double *y, double *z, 
               double lambda, double mu, double k, double cv, double cp, double g) {
@@ -215,12 +168,10 @@ void computeF(double f[3][5], double *t, double *x, double *y, double *z,
   double F_adv_energy[3] = {(E + P)*u[0], (E + P)*u[1], (E + P)*u[2]};
 
   // -- Diffusive Flux 
-  //double dT[3] = {(dE[0]/rho - E*drho[0]/(rho*rho) - (u[0]*du[0][0] + u[1]*du[1][0] + u[2]*du[2][0]))    /cv,
-  //                (dE[1]/rho - E*drho[1]/(rho*rho) - (u[0]*du[0][1] + u[1]*du[1][1] + u[2]*du[2][1]))    /cv,
-  //                (dE[2]/rho - E*drho[2]/(rho*rho) - (u[0]*du[0][2] + u[1]*du[1][2] + u[2]*du[2][2]) - g)/cv
-  //               };
-  double dT[3] = {0.};
-  computeGrad_T(dT, t, x, y, z, g, cv);  // TODO: Check if this is required
+  double dT[3] = {(dE[0]/rho - E*drho[0]/(rho*rho) - (u[0]*du[0][0] + u[1]*du[1][0] + u[2]*du[2][0]))    /cv,
+                  (dE[1]/rho - E*drho[1]/(rho*rho) - (u[0]*du[0][1] + u[1]*du[1][1] + u[2]*du[2][1]))    /cv,
+                  (dE[2]/rho - E*drho[2]/(rho*rho) - (u[0]*du[0][2] + u[1]*du[1][2] + u[2]*du[2][2]) - g)/cv
+                 };
   double F_dif_energy[3] = {u[0]*Fu[0] + u[1]*Fu[1] + u[2]*Fu[2] + k*dT[0], 
                             u[0]*Fu[1] + u[1]*Fu[3] + u[2]*Fu[4] + k*dT[1], 
                             u[0]*Fu[2] + u[1]*Fu[4] + u[2]*Fu[5] + k*dT[2] 
@@ -319,8 +270,10 @@ void computeF0(double f0[5], double *t, double *x, double *y, double *z,
   double F_adv_energy[3] = {(E + P)*u[0], (E + P)*u[1], (E + P)*u[2]};
 
   // -- Diffusive Flux  
-  double dT[3] = {0.};
-  computeGrad_T(dT, t, x, y, z, g, cv);  // TODO: Check if this is required
+  double dT[3] = {(dE[0]/rho - E*drho[0]/(rho*rho) - (u[0]*du[0][0] + u[1]*du[1][0] + u[2]*du[2][0]))    /cv,
+                  (dE[1]/rho - E*drho[1]/(rho*rho) - (u[0]*du[0][1] + u[1]*du[1][1] + u[2]*du[2][1]))    /cv,
+                  (dE[2]/rho - E*drho[2]/(rho*rho) - (u[0]*du[0][2] + u[1]*du[1][2] + u[2]*du[2][2]) - g)/cv
+                 };
   double F_dif_energy[3] = {u[0]*Fu[0] + u[1]*Fu[1] + u[2]*Fu[2] + k*dT[0], 
                             u[0]*Fu[1] + u[1]*Fu[3] + u[2]*Fu[4] + k*dT[1], 
                             u[0]*Fu[2] + u[1]*Fu[4] + u[2]*Fu[5] + k*dT[2] 
@@ -440,8 +393,10 @@ void computeF1(double f1[5], double *t, double *x, double *y, double *z,
   double F_adv_energy[3] = {(E + P)*u[0], (E + P)*u[1], (E + P)*u[2]};
 
   // -- Diffusive Flux  
-  double dT[3] = {0.};
-  computeGrad_T(dT, t, x, y, z, g, cv);  // TODO: Check if this is required
+  double dT[3] = {(dE[0]/rho - E*drho[0]/(rho*rho) - (u[0]*du[0][0] + u[1]*du[1][0] + u[2]*du[2][0]))    /cv,
+                  (dE[1]/rho - E*drho[1]/(rho*rho) - (u[0]*du[0][1] + u[1]*du[1][1] + u[2]*du[2][1]))    /cv,
+                  (dE[2]/rho - E*drho[2]/(rho*rho) - (u[0]*du[0][2] + u[1]*du[1][2] + u[2]*du[2][2]) - g)/cv
+                 };
   double F_dif_energy[3] = {u[0]*Fu[0] + u[1]*Fu[1] + u[2]*Fu[2] + k*dT[0], 
                             u[0]*Fu[1] + u[1]*Fu[3] + u[2]*Fu[4] + k*dT[1], 
                             u[0]*Fu[2] + u[1]*Fu[4] + u[2]*Fu[5] + k*dT[2] 
@@ -559,8 +514,10 @@ void computeF2(double f2[5], double *t, double *x, double *y, double *z,
   double F_adv_energy[3] = {(E + P)*u[0], (E + P)*u[1], (E + P)*u[2]};
 
   // -- Diffusive Flux  
-  double dT[3] = {0.};
-  computeGrad_T(dT, t, x, y, z, g, cv);  // TODO: Check if this is required
+  double dT[3] = {(dE[0]/rho - E*drho[0]/(rho*rho) - (u[0]*du[0][0] + u[1]*du[1][0] + u[2]*du[2][0]))    /cv,
+                  (dE[1]/rho - E*drho[1]/(rho*rho) - (u[0]*du[0][1] + u[1]*du[1][1] + u[2]*du[2][1]))    /cv,
+                  (dE[2]/rho - E*drho[2]/(rho*rho) - (u[0]*du[0][2] + u[1]*du[1][2] + u[2]*du[2][2]) - g)/cv
+                 };
   double F_dif_energy[3] = {u[0]*Fu[0] + u[1]*Fu[1] + u[2]*Fu[2] + k*dT[0], 
                             u[0]*Fu[1] + u[1]*Fu[3] + u[2]*Fu[4] + k*dT[1], 
                             u[0]*Fu[2] + u[1]*Fu[4] + u[2]*Fu[5] + k*dT[2] 
