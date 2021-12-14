@@ -178,6 +178,11 @@ void computeF(double f[3][5], double *t, double *x, double *y, double *z,
 
   // Density 
   // -- Advective flux
+  //for (int j=0; j<3; j++) f[j][0] += rho*u[j];
+  //for (int j=0; j<3; j++) {
+  //  printf("\n");
+  //  for (int k=0; k<5; k++) printf("force[%d][%d] = ")
+  //}
   double F_adv_density[3] = {rho*u[0], rho*u[1], rho*u[2]};
 
   // -- No diffusive flux
@@ -223,8 +228,8 @@ void computeF(double f[3][5], double *t, double *x, double *y, double *z,
   
   // Populate Flux
   // -- Zero f
-  for (int i=0; i<3; i++)  for (int j=0; j<5; j++) f[i][j] = 0.;
-
+  for (int j=0; j<3; j++)  for (int k=0; k<5; k++) f[j][k] = 0.;
+  
   // -- Density
   for (int i=0; i<3; i++) f[i][0] += F_adv_density[i];
 
@@ -242,16 +247,24 @@ void computeF(double f[3][5], double *t, double *x, double *y, double *z,
   } 
 }
 
-void computeGrad_F(double grad_f[3][5], double *t, double *x, double *y, double *z,
-                   double lambda, double mu, double k, double cv, double cp, double g) { 
-  double q[5];
-  // Derivative wrt x
+// -- dFlux[0]/dx
+void computeF0(double f0[5], double *t, double *x, double *y, double *z, 
+               double lambda, double mu, double k, double cv, double cp, double g) {
+  double f[3][5] = {{0.}};              
+  computeF(f, t, x, y, z, lambda, mu, k, cv, cp, g);
   for (int i=0; i<5; i++) {
-    double q_[5] = {0.}; q_[i] = 1.;
-    __enzyme_autodiff((void *)computeF,
-                      q, q_,
+    f0[i] = f[0][i];
+  }
+}
+void compute_dF0_dx(double df0_dx[5], double *t, double *x, double *y, double *z,
+                    double lambda, double mu, double k, double cv, double cp, double g) {
+  double f0[5];
+  for (int i=0; i<5; i++) {
+    double f0_[5] = {0.}; f0_[i] = 1.;
+    __enzyme_autodiff((void *)computeF0,
+                      f0, f0_,
                       enzyme_const, t,
-                      x, &grad_f[0][i],
+                      x, &df0_dx[i],
                       enzyme_const, y,
                       enzyme_const, z,
                       enzyme_const, lambda,
@@ -261,31 +274,57 @@ void computeGrad_F(double grad_f[3][5], double *t, double *x, double *y, double 
                       enzyme_const, cp,
                       enzyme_const, g);
   }
-  // Derivative wrt y
+}
+
+// -- dFlux[1]/dy
+void computeF1(double f1[5], double *t, double *x, double *y, double *z, 
+               double lambda, double mu, double k, double cv, double cp, double g) {
+  double f[3][5] = {{0.}}; ;              
+  computeF(f, t, x, y, z, lambda, mu, k, cv, cp, g);
   for (int i=0; i<5; i++) {
-    double q_[5] = {0.}; q_[i] = 1.;
-    __enzyme_autodiff((void *)computeF,
-                      q, q_,
+    f1[i] = f[1][i];
+  }
+}
+void compute_dF1_dy(double df1_dy[5], double *t, double *x, double *y, double *z,
+                   double lambda, double mu, double k, double cv, double cp, double g) {
+  double f1[5];
+  for (int i=0; i<5; i++) {
+    double f1_[5] = {0.}; f1_[i] = 1.;
+    __enzyme_autodiff((void *)computeF1,
+                      f1, f1_,
                       enzyme_const, t,
                       enzyme_const, x,
-                      y, &grad_f[1][i],
+                      y, &df1_dy[i],
                       enzyme_const, z,
                       enzyme_const, lambda,
                       enzyme_const, mu,
                       enzyme_const, k,
                       enzyme_const, cv,
                       enzyme_const, cp,
-                      enzyme_const, g);                      
+                      enzyme_const, g);
   }
-  // Derivative wrt z
+}
+
+// -- dFlux[2]/dz
+void computeF2(double f2[5], double *t, double *x, double *y, double *z, 
+              double lambda, double mu, double k, double cv, double cp, double g) {
+  double f[3][5] = {{0.}};              
+  computeF(f, t, x, y, z, lambda, mu, k, cv, cp, g);
   for (int i=0; i<5; i++) {
-    double q_[5] = {0.}; q_[i] = 1.;
-    __enzyme_autodiff((void *)computeF,
-                      q, q_,
+    f2[i] = f[2][i];
+  }
+}
+void compute_dF2_dz(double df2_dz[5], double *t, double *x, double *y, double *z,
+                   double lambda, double mu, double k, double cv, double cp, double g) {
+  double f2[5];
+  for (int i=0; i<5; i++) {
+    double f2_[5] = {0.}; f2_[i] = 1.;
+    __enzyme_autodiff((void *)computeF2,
+                      f2, f2_,
                       enzyme_const, t,
                       enzyme_const, x,
                       enzyme_const, y,
-                      z, &grad_f[2][i],
+                      z, &df2_dz[i],
                       enzyme_const, lambda,
                       enzyme_const, mu,
                       enzyme_const, k,
@@ -313,13 +352,6 @@ int main() {
   // -------------------------------------------------------------------------
   double q_dot[5] = {0.};       // Must initialize
   computeQdot(q_dot, time, x, y, z);
-
-  // Print output
-  printf("\n-------------------------------------------------------------------------\n");
-  printf("q_dot:");
-  printf("\n-------------------------------------------------------------------------\n");
-  for (int j=0; j<5; j++) printf("%f\t", q_dot[j]);
-  printf("\n");
 
   // Add Qdot to the forcing term
     for (int j=0; j<5; j++) force[j] += wdetJ*q_dot[j];
@@ -355,10 +387,27 @@ int main() {
   mu *= Pascal * second;
   k  *= W_per_m_K;
   double gamma  = cp / cv;
-  
+
+  // -- Compute Flux
+  //double F[3][5] = {{0.}}; // Must initialize
+  //computeF(F, time, x, y, z, lambda, mu, k, cv, cp, g);
+  //// Print output
+  //printf("\n-------------------------------------------------------------------------\n");
+  //printf("Flux:");
+  //printf("\n-------------------------------------------------------------------------");
+  //for (int i=0; i<3; i++) {
+  //  printf("\nFlux in direction %d:\n", i);
+  //  for (int j=0; j<5; j++) printf("%f\t", F[i][j]);
+  //  printf("\n");
+  //}
+  //printf("\n");
+
+
   // -- Compute grad(flux)
   double grad_F[3][5] = {{0.}}; // Must initialize
-  computeGrad_F(grad_F, time, x, y, z, lambda, mu, k, cv, cp, g);
+  compute_dF0_dx(grad_F[0], time, x, y, z, lambda, mu, k, cv, cp, g);
+  //compute_dF1_dy(grad_F[1], time, x, y, z, lambda, mu, k, cv, cp, g);
+  //compute_dF2_dz(grad_F[2], time, x, y, z, lambda, mu, k, cv, cp, g);
   // Print output
   printf("\n-------------------------------------------------------------------------\n");
   printf("grad(flux):");
@@ -369,21 +418,19 @@ int main() {
     printf("\n");
   }
 
-  // -- Compute div(flux)
-  double div_f[5] = {0.};
-  for (int j=0; j<5; j++)
-    for (int k=0; k<3; k++)
-      div_f[j] += grad_F[k][j];
-
-  // Print output
-  printf("\n-------------------------------------------------------------------------\n");
-  printf("div(flux):");
-  printf("\n-------------------------------------------------------------------------\n");
-  for (int j=0; j<5; j++) printf("%f\t", div_f[j]);
-  printf("\n");
-
-  // Add div(flux) to the forcing term
-  for (int j=0; j<5; j++) force[j] += wdetJ*div_f[j];
+  //// -- Compute div(flux)
+  //double div_f[5] = {0.};
+  //for (int j=0; j<5; j++)
+  //  for (int k=0; k<3; k++)
+  //    div_f[j] += grad_F[k][j];
+  //// Print output
+  //printf("\n-------------------------------------------------------------------------\n");
+  //printf("div(flux):");
+  //printf("\n-------------------------------------------------------------------------\n");
+  //for (int j=0; j<5; j++) printf("%f\t", div_f[j]);
+  //printf("\n");
+  //// Add div(flux) to the forcing term
+  //for (int j=0; j<5; j++) force[j] += wdetJ*div_f[j];
 
   // -------------------------------------------------------------------------
   // Body force
@@ -410,5 +457,18 @@ int main() {
 
 /*
 clang test022.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
+
+Output:
+-------------------------------------------------------------------------
+Flux:
+-------------------------------------------------------------------------
+Flux in direction 0:
+82.900000	-162693.796709	103.275085	123.668264	-162612.275110	
+
+Flux in direction 1:
+103.300000	103.275085	-162647.968064	154.146018	-202627.748570	
+
+Flux in direction 2:
+123.700000	123.668264	154.146018	-162592.054844	-242643.222031
 
 */
