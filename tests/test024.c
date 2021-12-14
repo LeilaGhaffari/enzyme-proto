@@ -9,7 +9,6 @@ void __enzyme_autodiff(void *, ...);
 int enzyme_const;
 
 int ExactSolution(double q[], double *time, double *X, double *Y, double *Z) {
-
   // -- Time
   double t = time[0];
   // -- Coordinates
@@ -63,13 +62,13 @@ void computeGrad_q(double grad_q[3][5], double *t, double *x, double *y, double 
 }
 
 void compute_dq_x(double dq[5], double *t, double *x, double *y, double *z) {
-    double grad_q[3][5];
-    computeGrad_q(grad_q, t, x, y, z);
-    for (int i=0; i<5; i++) dq[i] = grad_q[0][i];
+  double grad_q[3][5];
+  computeGrad_q(grad_q, t, x, y, z);
+  for (int i=0; i<5; i++) dq[i] = grad_q[0][i];
 }
 
 void compute_d2q_x(double dq[5], double *t, double *x, double *y, double *z) {
-    double dq_x[5];
+  double dq_x[5];
   // Derivative wrt x
   for (int i=0; i<5; i++) {
     double q_[5] = {0.}; q_[i] = 1.;
