@@ -81,6 +81,55 @@ void compute_d2q_x(double dq[5], double *t, double *x, double *y, double *z) {
   }
 }
 
+ // -- Temperature: T =  (E / rho - (u u)/2 - g z) / cv
+void computeT(double *T, double *t, double *x, double *y, double *z, double g, double cv) {
+  // Compute state variables                
+  double q[5];
+  ExactSolution(q, t, x, y, z);
+  double rho = q[0];
+  double u[3] = {q[1]/rho, q[2]/rho, q[3]/rho};
+  double E = q[4];
+
+  // Kinetic Energy
+  double kinetic_energy = (u[0]*u[0] + u[1]*u[1] + u[2]*u[2]) / 2.;
+
+  // Compute T
+  T[0] =  (E/rho - kinetic_energy - g*z[0]) / cv;
+
+}
+
+// -- Grad_T
+void computeGrad_T(double dT[3], double *t, double *x, double *y, double *z, double g, double cv) {
+  double T[0], T_ = 1.;
+  // Derivative wrt x
+  __enzyme_autodiff((void *)computeT,
+                    T, &T_,
+                    enzyme_const, t,
+                    x, &dT[0],
+                    enzyme_const, y,
+                    enzyme_const, z,
+                    enzyme_const, g,
+                    enzyme_const, cv);
+  // Derivative wrt y
+  __enzyme_autodiff((void *)computeT,
+                    T, &T_,
+                    enzyme_const, t,
+                    enzyme_const, x,
+                    y, &dT[1],
+                    enzyme_const, z,
+                    enzyme_const, g,
+                    enzyme_const, cv);
+  // Derivative wrt z
+  __enzyme_autodiff((void *)computeT,
+                    T, &T_,
+                    enzyme_const, t,
+                    enzyme_const, x,
+                    enzyme_const, y,
+                    z, &dT[2],
+                    enzyme_const, g,
+                    enzyme_const, cv);
+}
+
 // ***************************************************************************
 // Main Function
 // ***************************************************************************
@@ -108,6 +157,16 @@ int main() {
   printf("\nd2q/dx2:\n");
   for (int j=0; j<5; j++) printf("%f\t", d2q_dx2[j]);
 
+  // -------------------------------------------------------------------------
+  // dT
+  // -------------------------------------------------------------------------
+  double g = 58., cv = 2649.;
+  double dT[3] = {0.};
+  computeGrad_T(dT, time, x, y, z, g, cv);
+  // Print output
+  printf("\n\ndT:\n");
+  for (int j=0; j<3; j++) printf("%f\t", dT[j]);
+
   printf("\n");
   return 0;
 }
@@ -125,6 +184,9 @@ Derivative in direction 2:
 111.000000	121.000000	131.000000	141.000000	151.000000	
 
 d2q/dx2:
-2.000000	4.000000	6.000000	8.000000	10.000000
+2.000000	4.000000	6.000000	8.000000	10.000000	
+
+dT:
+-0.000003	0.000000	0.000000
 
 */
