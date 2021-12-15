@@ -88,116 +88,6 @@ void computeGrad_q(double grad_q[3][5], double *t, double *x, double *y, double 
   }
 }
 
-void computeF(double f[3][5], double *t, double *x, double *y, double *z, 
-              double lambda, double mu, double k, double cv, double cp, double g) {
-  // Compute state variables                
-  double q[5];
-  ExactSolution(q, t, x, y, z);
-  double rho = q[0];
-  double u[3] = {q[0]/rho, q[1]/rho, q[2]/rho};
-  double E = q[4];
-  
-  // Compute gradient of state variables
-  //double dq[3][5] = {{1.,	2.,	3.,	4.,	5.,},
-  //                   {6.,	7.,	8.,	9.,	10.},
-  //                   {11., 12.,	13.,	14., 15.}
-  //                  };
-  double dq[3][5] = {{0.}};
-  computeGrad_q(dq, t, x, y, z);
-
-  double drho[3] =   {dq[0][0],
-                      dq[1][0],
-                      dq[2][0]
-                     };
-  double dU[3][3] = {{dq[0][1],
-                      dq[1][1],
-                      dq[2][1]},
-                     {dq[0][2],
-                      dq[1][2],
-                      dq[2][2]},
-                     {dq[0][3],
-                      dq[1][3],
-                      dq[2][3]}
-                    };
-  double dE[3] =     {dq[0][4],
-                      dq[1][4],
-                      dq[2][4]
-                     };
-
-  double du[3][3] = {{0.}};
-  for (int j=0; j<3; j++)
-    for (int k=0; k<3; k++)
-      du[j][k] = (dU[j][k] - drho[k]*u[j]) / rho;                   
-
-  // Density 
-  // -- Advective flux
-  //for (int j=0; j<3; j++) f[j][0] += rho*u[j];
-  //for (int j=0; j<3; j++) {
-  //  printf("\n");
-  //  for (int k=0; k<5; k++) printf("force[%d][%d] = ")
-  //}
-  double F_adv_density[3] = {rho*u[0], rho*u[1], rho*u[2]};
-
-  // -- No diffusive flux
-
-  // Momentum 
-  // -- Advective flux
-  double gamma = cp/cv;
-  double kinetic_energy = (u[0]*u[0] + u[1]*u[1] + u[2]*u[2]) / 2.;
-  double P = (E - kinetic_energy * rho - rho*g*z[0]) * (gamma - 1.);
-  double F_adv_momentum[3][3] = {{rho*u[0]*u[0] + P, rho*u[0]*u[1],     rho*u[0]*u[2]},
-                                 {rho*u[1]*u[0],     rho*u[1]*u[1] + P, rho*u[1]*u[2]}, 
-                                 {rho*u[2]*u[0],     rho*u[2]*u[1],     rho*u[2]*u[02] + P}};
-  // -- Diffusive Flux
-  double Fu[6] = {mu*(du[0][0] * (2 + lambda) + lambda * (du[1][1] + du[2][2])),
-                  mu*(du[0][1] + du[1][0]), 
-                  mu*(du[0][2] + du[2][0]), 
-                  mu*(du[1][1] * (2 + lambda) + lambda * (du[0][0] + du[2][2])),
-                  mu*(du[1][2] + du[2][1]), 
-                  mu*(du[2][2] * (2 + lambda) + lambda * (du[0][0] + du[1][1]))
-                 };
-
-  const int Fuviscidx[3][3] = {{0, 1, 2}, {1, 3, 4}, {2, 4, 5}}; // symmetric matrix indices
-  double F_dif_momentum[3][3];
-  for (int j=0; j<3; j++) 
-    for (int k=0; k<3; k++) 
-      F_dif_momentum[j][k] = Fu[Fuviscidx[j][k]];
-
-  // Total Energy
-  // -- Advective flux
-  double F_adv_energy[3] = {(E + P)*u[0], (E + P)*u[1], (E + P)*u[2]};
-
-  // -- Diffusive Flux 
-  double dT[3] = {(dE[0]/rho - E*drho[0]/(rho*rho) - (u[0]*du[0][0] + u[1]*du[1][0] + u[2]*du[2][0]))    /cv,
-                  (dE[1]/rho - E*drho[1]/(rho*rho) - (u[0]*du[0][1] + u[1]*du[1][1] + u[2]*du[2][1]))    /cv,
-                  (dE[2]/rho - E*drho[2]/(rho*rho) - (u[0]*du[0][2] + u[1]*du[1][2] + u[2]*du[2][2]) - g)/cv
-                 };
-  double F_dif_energy[3] = {u[0]*Fu[0] + u[1]*Fu[1] + u[2]*Fu[2] + k*dT[0], 
-                            u[0]*Fu[1] + u[1]*Fu[3] + u[2]*Fu[4] + k*dT[1], 
-                            u[0]*Fu[2] + u[1]*Fu[4] + u[2]*Fu[5] + k*dT[2] 
-                           };
-  
-  // Populate Flux
-  // -- Zero f
-  for (int j=0; j<3; j++)  for (int k=0; k<5; k++) f[j][k] = 0.;
-  
-  // -- Density
-  for (int i=0; i<3; i++) f[i][0] += F_adv_density[i];
-
-  // -- Momentum
-  for (int i=0; i<3; i++) 
-    for (int j=0; j<3; j++) {
-      f[i][j+1] += F_adv_momentum[j][i];
-      f[i][j+1] -= F_dif_momentum[j][i];
-    }
-
-  // -- Energy
-  for (int i=0; i<3; i++) {
-      f[i][4] += F_adv_energy[i];
-      f[i][4] -= F_dif_energy[i];
-  } 
-}
-
 // -- dFlux[0]/dx
 void computeF0(double f0[5], double *t, double *x, double *y, double *z, 
                double lambda, double mu, double k, double cv, double cp, double g) {              
@@ -205,7 +95,7 @@ void computeF0(double f0[5], double *t, double *x, double *y, double *z,
   double q[5];
   ExactSolution(q, t, x, y, z);
   double rho = q[0];
-  double u[3] = {q[0]/rho, q[1]/rho, q[2]/rho};
+  double u[3] = {q[1]/rho, q[2]/rho, q[3]/rho};
   double E = q[4];
   
   // Compute gradient of state variables
@@ -328,7 +218,7 @@ void computeF1(double f1[5], double *t, double *x, double *y, double *z,
   double q[5];
   ExactSolution(q, t, x, y, z);
   double rho = q[0];
-  double u[3] = {q[0]/rho, q[1]/rho, q[2]/rho};
+  double u[3] = {q[1]/rho, q[2]/rho, q[3]/rho};
   double E = q[4];
   
   // Compute gradient of state variables
@@ -449,7 +339,7 @@ void computeF2(double f2[5], double *t, double *x, double *y, double *z,
   double q[5];
   ExactSolution(q, t, x, y, z);
   double rho = q[0];
-  double u[3] = {q[0]/rho, q[1]/rho, q[2]/rho};
+  double u[3] = {q[1]/rho, q[2]/rho, q[3]/rho};
   double E = q[4];
   
   // Compute gradient of state variables
@@ -668,32 +558,20 @@ clang test022.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzym
 
 Output:
 -------------------------------------------------------------------------
-Flux:
--------------------------------------------------------------------------
-Flux in direction 0:
-82.900000	-162693.796709	103.275085	123.668264	-162612.275110	
-
-Flux in direction 1:
-103.300000	103.275085	-162647.968064	154.146018	-202627.748570	
-
-Flux in direction 2:
-123.700000	123.668264	154.146018	-162592.054844	-242643.222031
-
--------------------------------------------------------------------------
 grad(flux):
 -------------------------------------------------------------------------
 Derivative in direction 0:
-1.000000	-1962.601219	2.000383	3.000547	-1958.600729	
+2.000000	-1962.148435	4.863979	6.296025	-3922.190909	
 
 Derivative in direction 1:
-7.000000	7.001751	-11773.008432	9.256028	-13733.141883	
+8.000000	9.257916	-11772.054837	11.767718	-15696.907074	
 
 Derivative in direction 2:
-13.000000	13.003838	13.647028	-54137.027758	-74083.800481	
+14.000000	14.476215	14.943049	-54136.789826	-84057.035506	
 
 -------------------------------------------------------------------------
 force:
 -------------------------------------------------------------------------
-35.000000	-1914.595630	-11715.361021	27256.128818	-89705.543093
+38.000000	-1910.414304	-11710.247809	27262.173917	-103606.133490
 
 */
