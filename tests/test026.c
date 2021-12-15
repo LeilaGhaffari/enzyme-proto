@@ -119,24 +119,23 @@ void computeF0(double f0[5], double *t, double x[],
                            };
   
   // Populate Flux
-  double f[3][5] = {{0.}};
+  // -- Zero f0
+  for (int j=0; j<5; j++) f0[j] =0.;
+
   // -- Density
-  for (int i=0; i<3; i++) f[i][0] += F_adv_density[i];
+  f0[0] += F_adv_density[0];
 
   // -- Momentum
-  for (int i=0; i<3; i++) 
-    for (int j=0; j<3; j++) {
-      f[i][j+1] += F_adv_momentum[j][i];
-      f[i][j+1] -= F_dif_momentum[j][i];
-    }
 
-  // -- Energy
-  for (int i=0; i<3; i++) {
-      f[i][4] += F_adv_energy[i];
-      f[i][4] -= F_dif_energy[i];
+  for (int j=0; j<3; j++) {
+    f0[j+1] += F_adv_momentum[j][0];
+    f0[j+1] -= F_dif_momentum[j][0];
   }
 
-  for (int i=0; i<5; i++) f0[i] = f[0][i];
+
+  // -- Energy
+  f0[4] += F_adv_energy[0];
+  f0[4] -= F_dif_energy[0];
 
 }
 
@@ -229,24 +228,23 @@ void computeF1(double f1[5], double *t, double x[],
                            };
   
   // Populate Flux
-  double f[3][5] = {{0.}};
+  // -- Zero f0
+  for (int j=0; j<5; j++) f1[j] =0.;
+
   // -- Density
-  for (int i=0; i<3; i++) f[i][0] += F_adv_density[i];
+  f1[0] += F_adv_density[1];
 
   // -- Momentum
-  for (int i=0; i<3; i++) 
-    for (int j=0; j<3; j++) {
-      f[i][j+1] += F_adv_momentum[j][i];
-      f[i][j+1] -= F_dif_momentum[j][i];
-    }
 
-  // -- Energy
-  for (int i=0; i<3; i++) {
-      f[i][4] += F_adv_energy[i];
-      f[i][4] -= F_dif_energy[i];
+  for (int j=0; j<3; j++) {
+    f1[j+1] += F_adv_momentum[j][1];
+    f1[j+1] -= F_dif_momentum[j][1];
   }
 
-  for (int i=0; i<5; i++) f1[i] = f[1][i];
+
+  // -- Energy
+  f1[4] += F_adv_energy[1];
+  f1[4] -= F_dif_energy[1];
 }
 
 void compute_dF1_dy(double df1_dy[5], double *t, double x[],
@@ -338,24 +336,23 @@ void computeF2(double f2[5], double *t, double x[],
                            };
   
   // Populate Flux
-  double f[3][5] = {{0.}};
+  // -- Zero f0
+  for (int j=0; j<5; j++) f2[j] =0.;
+
   // -- Density
-  for (int i=0; i<3; i++) f[i][0] += F_adv_density[i];
+  f2[0] += F_adv_density[2];
 
   // -- Momentum
-  for (int i=0; i<3; i++) 
-    for (int j=0; j<3; j++) {
-      f[i][j+1] += F_adv_momentum[j][i];
-      f[i][j+1] -= F_dif_momentum[j][i];
-    }
 
-  // -- Energy
-  for (int i=0; i<3; i++) {
-      f[i][4] += F_adv_energy[i];
-      f[i][4] -= F_dif_energy[i];
+  for (int j=0; j<3; j++) {
+    f2[j+1] += F_adv_momentum[j][2];
+    f2[j+1] -= F_dif_momentum[j][2];
   }
 
-  for (int i=0; i<5; i++) f2[i] = f[2][i];
+
+  // -- Energy
+  f2[4] += F_adv_energy[2];
+  f2[4] -= F_dif_energy[2];
 }
 
 void compute_dF2_dz(double df2_dz[5], double *t, double x[],
@@ -391,7 +388,7 @@ int main() {
 
   // Zero force so all future terms can safely sum into it
   for (int j=0; j<5; j++) force[j] = 0.;
-  
+
   // -------------------------------------------------------------------------
   // q_diff
   // -------------------------------------------------------------------------
