@@ -85,9 +85,7 @@ int main() {
 
 /*
 
-clang test014.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-
-//// Output:
+// Output:
 
         2.613940        0.000000        0.000000 
         0.000000        2.978291        0.000000 

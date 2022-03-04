@@ -38,8 +38,6 @@ int main() {
 
 /*
 
-clang test007.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-
 Output:
 9.000000 6.000000
 16.000000 8.000000

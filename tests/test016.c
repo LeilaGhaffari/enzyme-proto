@@ -68,7 +68,6 @@ int main() {
 }
 
 /*
-clang test016.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 a,  x,  y,  a_
 

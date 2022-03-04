@@ -52,8 +52,6 @@ int main() {
 
 /*
 
-clang test008.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-
 Output:
 
 dx =

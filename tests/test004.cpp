@@ -67,27 +67,3 @@ int main() {
     reverse();
 }
 
-/*
-
-clang test004.cpp -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-
-*/
-
-/* 
-Output:
-
-  %4 = tail call double @_Z16__enzyme_reversePvddS_(i8* bitcast (double (double)* @_Z6squared to i8*), double %0, double %1, i8* %2)
-  ret double %4
-
-
-  %4 = tail call double @_Z16__enzyme_reversePvddS_(i8* bitcast (double (double)* @_Z6squared to i8*), double %0, double %1, i8* %2)
-  ret double %4
-
-i8* %2
-i8*
-
-$ ./a.out 
-9.000000
-shadow res=6.000000
-
-*/

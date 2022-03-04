@@ -89,7 +89,6 @@ int main() {
 }
 // ***************************************************************************
 /*
-clang test025.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 Derivative in direction 0:
 2.000000	3.000000	4.000000	5.000000	6.000000	

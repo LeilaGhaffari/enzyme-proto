@@ -60,9 +60,3 @@ int main() {
     printf("%f %f\n", host_x,   host_y);
     printf("%f %f\n", host_d_x, host_d_y);
 }
-
-/*
-
-clang test003.cu -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops -fPIC --cuda-gpu-arch=sm_70 -lcudart -L/usr/local/cuda-11.3/lib64; ./a.out
-
-*/

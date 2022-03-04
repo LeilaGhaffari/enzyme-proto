@@ -32,9 +32,3 @@ int main() {
         printf("%f %f %f\n", x[i], y[i], d_x[i]);
     }
 }
-
-/*
-
-clang test005.cpp -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops; ./a.out
-
-*/

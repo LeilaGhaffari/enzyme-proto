@@ -163,9 +163,8 @@ int main() {
 
 /*
 
-clang test020.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
-
 Output:
+
 qdot
 14.000000	28.000000	42.000000	56.000000	70.000000	
 

@@ -143,7 +143,6 @@ int main() {
 // ***************************************************************************
 
 /*
-clang test027.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 Output:
 -------------------------------------------------------------------------
