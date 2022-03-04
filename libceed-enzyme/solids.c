@@ -1,5 +1,5 @@
-// Mocking  the function computeS() in 
-// "libCEED/examples/solids/qfunctions/finite-strain-neo-hookean-initial-1.h"
+// Mocking function computeS() in 
+//   "libCEED/examples/solids/qfunctions/finite-strain-neo-hookean-initial-1.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,19 +71,16 @@ int computeS(double lambda, double mu, double E2work[6], double Swork[6]) {
                       {E2[0][2], E2[1][2], 1 + E2[2][2]}
                      };
    
-
     // Compute C^(-1) : C-Inverse
     double Cinvwork[6];
     double detCm1 = computeDetCM1(E2work);
     computeMatinvSym(C, detCm1+1, Cinvwork);
 
-   
     double C_inv[3][3] = {{Cinvwork[0], Cinvwork[5], Cinvwork[4]},
                           {Cinvwork[5], Cinvwork[1], Cinvwork[3]},
                           {Cinvwork[4], Cinvwork[3], Cinvwork[2]}
                          };
        
-
     // Compute the Second Piola-Kirchhoff (S)
     int indj[6] = {0, 1, 2, 1, 0, 0}, indk[6] = {0, 1, 2, 2, 2, 1};
     double logJ = log1p_series_shifted(detCm1) / 2.;

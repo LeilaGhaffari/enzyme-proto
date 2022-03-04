@@ -1,5 +1,6 @@
-// Mocking  the function computeS() in 
-// "libCEED/examples/solids/qfunctions/finite-strain-neo-hookean-initial-1.h"
+// Mocking function computeS() in 
+//   "libCEED/examples/solids/qfunctions/finite-strain-neo-hookean-initial-1.h"
+//   with Enzyme
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,6 @@ void grad_S(double *S, double *dS, double *E, double *dE, double lambda, double 
     __enzyme_reverse((void *)computeS,    enzyme_allocated, size, enzyme_tape, data, S, dS, E, dE, lambda, mu);
     free(data);
 }
-
 
 double log1p_series_shifted(double x) {
   double left = sqrt(2.)/2 - 1;
