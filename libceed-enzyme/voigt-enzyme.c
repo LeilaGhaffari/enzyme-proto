@@ -7,7 +7,6 @@
 
 #define VECSIZE 6
 
-
 int  __enzyme_augmentsize(void *, ...);
 void __enzyme_augmentfwd(void *, ...);
 void __enzyme_reverse(void *, ...);
@@ -16,7 +15,9 @@ int enzyme_dup;
 int enzyme_tape;
 int enzyme_const;
 int enzyme_allocated;
+
 void computeS(double *Swork, double *E2work, double lambda, double mu);
+
 void grad_S(double *S, double *dS, double *E, double *dE, double lambda, double mu) {
     int size = __enzyme_augmentsize((void *)computeS, enzyme_dup, enzyme_dup, enzyme_const, enzyme_const); // We need to add Const as well
     void *data = malloc(size);
@@ -168,8 +169,6 @@ int main() {
 }
 
 /*
-Compile:
-    clang voigt-enzyme.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/HEAD-6e45ead/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 Output:
 

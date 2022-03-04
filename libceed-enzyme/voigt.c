@@ -191,8 +191,6 @@ int main() {
 }
 
 /*
-Compile:
-    clang voigt.c -Xclang -load -Xclang /home/linuxbrew/.linuxbrew/Cellar/enzyme/0.0.19/lib/ClangEnzyme-12.so -O2 -fno-vectorize -fno-unroll-loops
 
 Output:
 

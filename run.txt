@@ -2,7 +2,7 @@ Build Enzyme:
 CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_DIR=/usr/lib/llvm-10 
 
 Compile test:
-clang test001.c -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build10D/Enzyme/ClangEnzyme-10.so -O2
+clang -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build10D/Enzyme/ClangEnzyme-10.so -O2 test001.c
 
 /*
   We can generate LLVM from this code by calling clang as follows. 
@@ -35,4 +35,7 @@ clang output_opt1.ll -o a1.exe
 ./a1.exe
 
 */
+
+Just a C code:
+clang -O2 foo.c
 
