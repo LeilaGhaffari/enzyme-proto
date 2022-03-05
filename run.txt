@@ -1,8 +1,9 @@
 Build Enzyme:
 CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_DIR=/usr/lib/llvm-10 
+cmake .. -DLLVM_DIR=/usr/lib/llvm-13
 
 Compile test:
-clang -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build10D/Enzyme/ClangEnzyme-10.so -O2 test001.c
+clang -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build13/Enzyme/ClangEnzyme-13.so -O2 test001.c
 
 /*
   We can generate LLVM from this code by calling clang as follows. 
@@ -26,7 +27,7 @@ clang -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build10D/Enzyme/ClangEnzym
 
 clang test001.c -S -emit-llvm -o input1.ll -O2 -fno-vectorize -fno-slp-vectorize -fno-unroll-loops
 
-opt input1.ll -load=/home/leila/Enzyme/enzyme/build12DHB/Enzyme/ClangEnzyme-12.so -enzyme -o output1.ll -S
+opt input1.ll -load=/home/leila/Enzyme/enzyme/build13/Enzyme/ClangEnzyme-13.so -enzyme -o output1.ll -S
 
 opt output1.ll -O2 -o output_opt1.ll -S
 
