@@ -3,7 +3,7 @@ CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_DIR=/usr/lib/llvm-
 cmake .. -DLLVM_DIR=/usr/lib/llvm-13
 
 Compile test:
-clang -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build13/Enzyme/ClangEnzyme-13.so -O2 test001.c
+clang-13 -Xclang -load -Xclang /home/leila/Enzyme/enzyme/build13/Enzyme/ClangEnzyme-13.so -O2 test001.c
 
 /*
   We can generate LLVM from this code by calling clang as follows. 

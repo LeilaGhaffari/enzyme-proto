@@ -26,7 +26,7 @@ static inline int getTapeSize(void *computeSfwd) {
   return __enzyme_augmentsize(computeSfwd, enzyme_dup, enzyme_dup, enzyme_const, enzyme_const);
 }
 
-/*
+/* CPP
 template<typename Func>
 static inline int getTapeSize() {
   return __enzyme_augmentsize((void*)Func, enzyme_dup, enzyme_dup, enzyme_const, enzyme_const);
