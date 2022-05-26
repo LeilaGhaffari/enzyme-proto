@@ -1,5 +1,5 @@
 Build Enzyme:
-CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_DIR=/usr/lib/llvm-10 
+CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DLLVM_DIR=/usr/lib/llvm-13
 cmake .. -DLLVM_DIR=/usr/lib/llvm-13
 
 Compile test:
