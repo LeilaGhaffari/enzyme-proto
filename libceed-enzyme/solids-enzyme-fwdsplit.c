@@ -11,7 +11,6 @@
 
 int  __enzyme_augmentsize(void *, ...);
 void __enzyme_augmentfwd(void *, ...);
-void __enzyme_reverse(void *, ...);
 void __enzyme_fwdsplit(void *, ...);
 
 int enzyme_dup;
@@ -38,19 +37,6 @@ void grad_S_fwd(double *S, double *E, const double lambda, const double mu, void
                       enzyme_tape, tape, enzyme_nofree, S, (double *)NULL, E, (double *)NULL,
                       enzyme_const, lambda, enzyme_const, mu);
 }
-
-void grad_S_rev(double *dS, double *dE, const double lambda, 
-                const double mu, void *tape, bool no_free) {
-  if (no_free)
-    __enzyme_reverse((void *)computeS, enzyme_allocated, sizeof(tape[0]),
-                     enzyme_tape, tape, enzyme_nofree, (double *)NULL, dS, (double *)NULL, dE,
-                     enzyme_const, lambda, enzyme_const, mu);
-  else
-    __enzyme_reverse((void *)computeS, enzyme_allocated, sizeof(tape[0]),
-                     enzyme_tape, tape, (double *)NULL, dS, (double *)NULL, dE,
-                     enzyme_const, lambda, enzyme_const, mu);
-}
-
 
 double log1p_series_shifted(double x) {
   double left = sqrt(2.)/2 - 1;
@@ -147,24 +133,12 @@ int main() {
   E2work[4] = 0.0126503210747925;
   E2work[5] = 0.6570956167695403;
 
-  double J[VECSIZE][VECSIZE];
-  for (int i=0; i<VECSIZE; i++) for (int j=0; j<6; j++) J[i][j] = 0.;
-
   int size = getTapeSize((void *)computeS);
   void *tape = malloc(size);
 
   // Forward mode
   double Swork[VECSIZE];
   grad_S_fwd(Swork, E2work, lambda, mu, tape);
-
-  // Reverse mode
-  /*
-  bool no_free = true;
-  for (int i=0; i<VECSIZE; i++) {
-    double dSwork[VECSIZE]  = {0., 0., 0., 0., 0., 0.}; dSwork[i] = 1.;
-    grad_S_rev(dSwork, J[i], lambda, mu, tape, no_free);
-  }
-  */
 
   double deltaEwork[VECSIZE] = {0., 0., 0., 0., 0., 0.};
   deltaEwork[0] = 0.9681576729097205;
@@ -175,20 +149,16 @@ int main() {
   deltaEwork[5] = 0.6002528007029311;
 
   for (int i=0; i<sizeof(deltaEwork)/sizeof(*deltaEwork); i++)
-      deltaEwork[i]*=2;
+      deltaEwork[i] *= 2.;
 
-  /*
-  for (int i=0; i<VECSIZE; i++) {
-    deltaSwork[i] = 0;
-    for (int j=0; j<VECSIZE; j++)
-      deltaSwork[i] += J[i][j] * 2. * deltaEwork[j]; // we need deltaE2work = 2 .* deltaEwork 
-  }
-  */
   double deltaSwork[VECSIZE];
-
-  __enzyme_fwdsplit((void *)computeS, enzyme_allocated, sizeof(tape[0]),
-                     enzyme_tape, tape, (double *)NULL, deltaSwork, (double *)NULL, deltaEwork,
-                     enzyme_const, lambda, enzyme_const, mu);
+  __enzyme_fwdsplit((void *)computeS, 
+                    enzyme_allocated, sizeof(tape[0]),
+                    enzyme_tape, tape, 
+                    (double *)NULL, deltaSwork, 
+                    (double *)NULL, deltaEwork,
+                    enzyme_const, lambda, 
+                    enzyme_const, mu);
   
   double deltaS[3][3] = {{deltaSwork[0], deltaSwork[5], deltaSwork[4]},
                          {deltaSwork[5], deltaSwork[1], deltaSwork[3]},
@@ -198,9 +168,6 @@ int main() {
   printf("\n\nSwork       = ");
   for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", Swork[i]);
 
-  //printf("\n\ndeltaSwork  = ");
-  //for (int i=0; i<VECSIZE; i++) printf("\t   %.6lf", deltaSwork[i]);
-
   printf("\n\ndeltaS      =\n\n");
   for (int i=0; i<3; i++) printf("\t\t%.12lf", deltaS[0][i]);
   printf("\n\n");
@@ -209,17 +176,6 @@ int main() {
   for (int i=0; i<3; i++) printf("\t\t%.12lf", deltaS[2][i]);
   printf("\n\n");
 
-  /*
-  {   
-    // Call without enzyme_nofree to free up the allocated memory
-    bool no_free = false;
-    double dSwork = 1, lambda =1, mu=1;
-    double J[6][6];
-    for (int i=0; i<6; i++) for (int j=0; j<6; j++) J[i][j] = 0.;
-    grad_S_rev(&dSwork, J[0], lambda, mu, tape, no_free);
-    // Free allocated memory for tape
-  }
-  */
   free(tape);
 
   return 0;
