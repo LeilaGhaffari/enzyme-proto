@@ -1,12 +1,10 @@
-// Test for forward mode vector with for loop
-
 #include <stdio.h>
 
 #define VECSIZE 2
 
-double __enzyme_fwddiff(void*, ...);
+double __enzyme_autodiff(void*, ...);
  
-void fun(double x[VECSIZE], double *result) {
+double fun(double *x) {
 
   double w1 = x[0];
   double w2 = x[1];
@@ -14,7 +12,7 @@ void fun(double x[VECSIZE], double *result) {
   double w4 = 1.0 / w1;
   double w5 = w3 + w4;
   
-  *result = w5;
+  return w5;
 }
 
 int main(int argc, char** argv) {
@@ -22,16 +20,15 @@ int main(int argc, char** argv) {
   for (int j = 1; j < 5; j++) {
     double x[VECSIZE]; 
     x[0] = (double)j; x[1] = x[0]*x[0]; 
-    double res;
-    double dres[VECSIZE];
+    double res = fun(x);
+    double dres[VECSIZE] = {0.};
+
+    __enzyme_autodiff((void *) fun, x, dres);
 
     printf("x: %f, y: %f\n", x[0], x[1]);
 
-    for (int i = 0; i < VECSIZE; i++) {
-      double dx[VECSIZE] = {0.}; dx[i] = 1.;
-      __enzyme_fwddiff(fun, x, dx, &res, &dres[i]);
+    for (int i = 0; i < VECSIZE; i++)
       printf("dres[%d] %f\n", i, dres[i]);
-    }
     printf("res %f\n", res);
     
     printf("\n");
