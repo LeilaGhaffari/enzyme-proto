@@ -105,37 +105,71 @@ void computePhi(double *Phi, double E2work[VECSIZE], double mu) {
   *Phi = mu * (-logJ + traceE);
 };
 
+// Kelvin-Mandel notation
+void KMStrainRate(const double grad_u[3][3], double strain_rate[6]) {
+  const double weight = 1 / sqrt(2.);
+  strain_rate[0] = grad_u[0][0];
+  strain_rate[1] = grad_u[1][1];
+  strain_rate[2] = grad_u[2][2];
+  strain_rate[3] = weight * (grad_u[2][1] + grad_u[1][2]);
+  strain_rate[4] = weight * (grad_u[2][0] + grad_u[0][2]);
+  strain_rate[5] = weight * (grad_u[1][0] + grad_u[0][1]);
+}
+
+void KMUnpack(const double v[6], double A[3][3]) {
+  const double weight = 1 / sqrt(2.);
+  A[0][0] = v[0];
+  A[1][1] = v[1];
+  A[2][2] = v[2];
+  A[2][1] = A[1][2] = weight * v[3];
+  A[2][0] = A[0][2] = weight * v[4];
+  A[1][0] = A[0][1] = weight * v[5];
+}
+
 int main() {
   double mu = 1.;
 
-  double E2work[VECSIZE];
-  E2work[0] = 0.5895232828911128;
-  E2work[1] = 0.2362491738162759;
-  E2work[2] = 0.9793730522395296;
-  E2work[3] = 0.2190993957421843;
-  E2work[4] = 0.0126503210747925;
-  E2work[5] = 0.6570956167695403;
+  double grad_u[3][3] = {
+    {
+      0.5895232828911128,
+      0.2362491738162759,
+      0.9793730522395296
+    },
+    {
+      0.2190993957421843,
+      0.0126503210747925,
+      0.6570956167695403
+    },
+    {
+      0.4984241659585802,
+      0.6163324783748984,
+      0.9352322238627951
+    }
+  };
+
+  double strain_rate[VECSIZE];
+  KMStrainRate(grad_u, strain_rate);
 
   // Compute S with Enzyme-AD Forward mode
   double Phi;
   double S_ad[VECSIZE];
   for (int i=0; i<VECSIZE; i++) { 
-    double dE2[VECSIZE] = {0.}; dE2[i] = 1.;
+    double dE[VECSIZE] = {0.}; dE[i] = 1.;
     __enzyme_fwddiff((void *)computePhi, 
                      &Phi, &S_ad[i], 
-                     E2work, dE2,
+                     strain_rate, dE,
                      enzyme_const, mu);
   }
   // The first 3 entries (diagonal in Voigt notation) worked with 2E here, but
   // we need the gradient with respect to E. The next three (off-diagonal
   // components) represent entries that appear twice in the matrix, thus they
   // already have the necessary scaling.
-  for (int i=0; i<3; i++)
-    S_ad[i] *= 2.;
+  //for (int i=0; i<3; i++)
+  //  S_ad[i] *= sqrt(2.);
 
   // Compute analytical S
   double S_an[VECSIZE];
-  S_analytical(S_an, E2work, mu);
+  S_analytical(S_an, strain_rate, mu);
 
   printf("\n\nPhi       = ");
   printf("\t   %.6lf", Phi);
