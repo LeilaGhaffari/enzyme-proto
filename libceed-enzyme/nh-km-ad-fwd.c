@@ -12,7 +12,7 @@ double __enzyme_fwddiff(void*, ...);
 int enzyme_dup;
 int enzyme_const;
 
-void computePhi(double *Phi, double E2work[VECSIZE], double mu);
+void StrainEnergy(double *Phi, double E2work[VECSIZE], double mu);
 
 double log1p_series_shifted(double x) {
   double left = sqrt(2.)/2 - 1;
@@ -93,7 +93,7 @@ void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu) {
   }
 };
 
-void computePhi(double *Phi, double E2work[VECSIZE], double mu) {
+void StrainEnergy(double *Phi, double E2work[VECSIZE], double mu) {
    
   // log(J)
   double detCm1 = computeDetCM1(E2work);
@@ -114,16 +114,6 @@ void KMStrainRate(const double grad_u[3][3], double strain_rate[6]) {
   strain_rate[3] = weight * (grad_u[2][1] + grad_u[1][2]);
   strain_rate[4] = weight * (grad_u[2][0] + grad_u[0][2]);
   strain_rate[5] = weight * (grad_u[1][0] + grad_u[0][1]);
-}
-
-void KMUnpack(const double v[6], double A[3][3]) {
-  const double weight = 1 / sqrt(2.);
-  A[0][0] = v[0];
-  A[1][1] = v[1];
-  A[2][2] = v[2];
-  A[2][1] = A[1][2] = weight * v[3];
-  A[2][0] = A[0][2] = weight * v[4];
-  A[1][0] = A[0][1] = weight * v[5];
 }
 
 int main() {
@@ -155,17 +145,13 @@ int main() {
   double S_ad[VECSIZE];
   for (int i=0; i<VECSIZE; i++) { 
     double dE[VECSIZE] = {0.}; dE[i] = 1.;
-    __enzyme_fwddiff((void *)computePhi, 
+    __enzyme_fwddiff((void *)StrainEnergy, 
                      &Phi, &S_ad[i], 
                      strain_rate, dE,
                      enzyme_const, mu);
   }
-  // The first 3 entries (diagonal in Voigt notation) worked with 2E here, but
-  // we need the gradient with respect to E. The next three (off-diagonal
-  // components) represent entries that appear twice in the matrix, thus they
-  // already have the necessary scaling.
-  //for (int i=0; i<3; i++)
-  //  S_ad[i] *= sqrt(2.);
+  for (int i=0; i<3; i++)
+    S_ad[i] *= 2.;
 
   // Compute analytical S
   double S_an[VECSIZE];
