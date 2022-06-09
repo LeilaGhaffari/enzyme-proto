@@ -24,8 +24,7 @@ xs[0] = guess;
 
 printf("|  n  |  x  |  f(x)  |\n|  %i  |  %f  |  %e  |\n", n, xs[n], func(xs[n]));
 // Newton's 
-while (tol > target_tol && n < n_max)
-{
+while (tol > target_tol && n < n_max){
     xs[n + 1] = xs[n] - func(xs[n])/dfunc(xs[n]);
     tol = fabs(func(xs[n + 1]));
     n ++;
