@@ -14,6 +14,8 @@ int enzyme_const;
 
 void StrainEnergy(double *Phi, double E2work[VECSIZE], double mu);
 
+void KMUnpack(const double v[6], double A[3][3]);
+
 double log1p_series_shifted(double x) {
   double left = sqrt(2.)/2 - 1;
   double right = sqrt(2.) - 1;
@@ -62,15 +64,13 @@ int computeMatinvSym(double A[3][3], double detA, double *Ainv) {
 
 void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu) {
   
-  double E2[3][3] = {{E2work[0], E2work[5], E2work[4]},
-                     {E2work[5], E2work[1], E2work[3]},
-                     {E2work[4], E2work[3], E2work[2]}
-                    };
+  double E2[3][3];
+  KMUnpack(E2work, E2);
    
   // C : right Cauchy-Green tensor
-  double C[3][3] = {{1 + E2[0][0], E2[0][1], E2[0][2]},
-                    {E2[0][1], 1 + E2[1][1], E2[1][2]},
-                    {E2[0][2], E2[1][2], 1 + E2[2][2]}
+  double C[3][3] = {{1 + E2[0][0],     E2[0][1],     E2[0][2]},
+                    {    E2[0][1], 1 + E2[1][1],     E2[1][2]},
+                    {    E2[0][2],     E2[1][2], 1 + E2[2][2]}
                    };
 
   // Compute C^(-1) : C-Inverse
@@ -114,6 +114,16 @@ void KMStrainRate(const double grad_u[3][3], double strain_rate[6]) {
   strain_rate[3] = weight * (grad_u[2][1] + grad_u[1][2]);
   strain_rate[4] = weight * (grad_u[2][0] + grad_u[0][2]);
   strain_rate[5] = weight * (grad_u[1][0] + grad_u[0][1]);
+}
+
+void KMUnpack(const double v[6], double A[3][3]) {
+  const double weight = 1 / sqrt(2.);
+  A[0][0] = v[0];
+  A[1][1] = v[1];
+  A[2][2] = v[2];
+  A[2][1] = A[1][2] = weight * v[3];
+  A[2][0] = A[0][2] = weight * v[4];
+  A[1][0] = A[0][1] = weight * v[5];
 }
 
 int main() {
