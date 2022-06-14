@@ -1,3 +1,3 @@
-# My-Enzyme
+# enzyme-proto
 
-This repository contains my exploration of [Enzyme AD](https://github.com/wsmoses/Enzyme).
+This repository contains tests and prototypes for using [Enzyme AD](https://github.com/wsmoses/Enzyme) in solving PDEs.
