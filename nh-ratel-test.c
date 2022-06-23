@@ -12,7 +12,7 @@ double __enzyme_autodiff(void*, ...);
 int enzyme_dup;
 int enzyme_const;
 
-double StrainEnergy(double E2work[VECSIZE], double mu, double lambda);
+double StrainEnergy(double Ework[VECSIZE], double mu, double lambda);
 
 double RatelLog1pSeriesShifted(double x) {
   const double left = sqrt(2.) / 2 - 1, right = sqrt(2.) - 1;
@@ -61,18 +61,26 @@ int computeMatinvSym(double A[3][3], double detA, double *Ainv) {
   return 0;
 };
 
-void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu, double lambda) {
+void S_analytical(double S_an[VECSIZE], double Ework[VECSIZE], double mu, double lambda) {
   
-  double E2[3][3] = {{E2work[0], E2work[5], E2work[4]},
-                     {E2work[5], E2work[1], E2work[3]},
-                     {E2work[4], E2work[3], E2work[2]}
+  double E[3][3] =  {{Ework[0], Ework[5], Ework[4]},
+                     {Ework[5], Ework[1], Ework[3]},
+                     {Ework[4], Ework[3], Ework[2]}
                     };
    
+  double E2work[6];
+  for(int i = 0; i<6; i++){
+    E2work[i] = Ework[i]*2.;
+  } 
+
   // C : right Cauchy-Green tensor
-  double C[3][3] = {{1 + E2[0][0], E2[0][1], E2[0][2]},
-                    {E2[0][1], 1 + E2[1][1], E2[1][2]},
-                    {E2[0][2], E2[1][2], 1 + E2[2][2]}
-                   };
+  double C[3][3]; 
+  for(int i = 0; i<3; i++){
+    for(int j = 0; j<3; j++){
+        C[i][j] = 2*E[i][j];
+        if(i == j) C[i][j] += 1;
+    }
+  }
 
   // Compute C^(-1) : C-Inverse
   double Cinvwork[VECSIZE];
@@ -90,26 +98,31 @@ void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu, doubl
   for ( int m = 0; m < VECSIZE; m++) {
       S_an[m] = lambda*logJ*Cinvwork[m];
       for ( int n = 0; n < 3; n++)
-          S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
+          S_an[m] += mu*C_inv[indj[m]][n]*E[n][indk[m]];
   }
 };
 
-double StrainEnergy(double E2work[VECSIZE], double mu, double lambda) {
+double StrainEnergy(double Ework[VECSIZE], double mu, double lambda) {
    
   // log(J)
+  double E2work[6];
+  for(int i = 0; i<6; i++){
+    E2work[i] = Ework[i]*2.;
+  } 
+
   double detCm1 = computeDetCM1(E2work);
-  double logJ = RatelLog1pSeriesShifted(detCm1) / 2.;
+  double logJ = RatelLog1pSeriesShifted(detCm1)/2.;
 
   // trace(E)
-  double traceE = (E2work[0] + E2work[1] + E2work[2]) / 2.;
+  double traceE = (Ework[0] + Ework[1] + Ework[2]);
 
   return lambda*logJ*logJ/2. + mu * (-logJ + traceE);
 };
 
-void S_autodiff(double *S_ad, double *E2work, double mu, double lambda) {
+void S_autodiff(double *S_ad, double *Ework, double mu, double lambda) {
   for (int i=0; i<VECSIZE; i++) S_ad[i] = 0.;
   __enzyme_autodiff((void *)StrainEnergy, 
-                     E2work, S_ad,
+                     Ework, S_ad,
                      enzyme_const, mu,
                      enzyme_const, lambda);
   // The first 3 entries (diagonal in Voigt notation) worked with 2E here, but
@@ -124,22 +137,22 @@ int main() {
   double mu = 1.;
   double lambda = 1.;
 
-  double E2work[VECSIZE];
-  E2work[0] = 0.5895232828911128;
-  E2work[1] = 0.2362491738162759;
-  E2work[2] = 0.9793730522395296;
-  E2work[3] = 0.2190993957421843;
-  E2work[4] = 0.0126503210747925;
-  E2work[5] = 0.6570956167695403;
+  double Ework[VECSIZE];
+  Ework[0] = 0.5895232828911128;
+  Ework[1] = 0.2362491738162759;
+  Ework[2] = 0.9793730522395296;
+  Ework[3] = 0.2190993957421843;
+  Ework[4] = 0.0126503210747925;
+  Ework[5] = 0.6570956167695403;
 
   // Compute S with Enzyme-AD Forward mode
-  double strain_energy = StrainEnergy(E2work, mu, lambda);
+  double strain_energy = StrainEnergy(Ework, mu, lambda);
   double S_ad[VECSIZE];
-  S_autodiff(S_ad, E2work, mu, lambda);
+  S_autodiff(S_ad, Ework, mu, lambda);
   
   // Compute analytical S
   double S_an[VECSIZE];
-  S_analytical(S_an, E2work, mu, lambda);
+  S_analytical(S_an, Ework, mu, lambda);
 
   printf("\n\nStrain Energy   = ");
   printf("\t   %.6lf", strain_energy);
