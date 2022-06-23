@@ -12,7 +12,7 @@ double __enzyme_autodiff(void*, ...);
 int enzyme_dup;
 int enzyme_const;
 
-double StrainEnergy(double E2work[VECSIZE], double mu);
+double StrainEnergy(double E2work[VECSIZE], double mu, double lambda);
 
 double log1p_series_shifted(double x) {
   double left = sqrt(2.)/2 - 1;
@@ -60,7 +60,7 @@ int computeMatinvSym(double A[3][3], double detA, double *Ainv) {
   return 0;
 };
 
-void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu) {
+void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu, double lambda) {
   
   double E2[3][3] = {{E2work[0], E2work[5], E2work[4]},
                      {E2work[5], E2work[1], E2work[3]},
@@ -87,13 +87,13 @@ void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu) {
   int indj[VECSIZE] = {0, 1, 2, 1, 0, 0}, indk[VECSIZE] = {0, 1, 2, 2, 2, 1};
   double logJ = log1p_series_shifted(detCm1) / 2.;
   for ( int m = 0; m < VECSIZE; m++) {
-      S_an[m] = 0.;
+      S_an[m] = lambda*logJ*Cinvwork[m];
       for ( int n = 0; n < 3; n++)
           S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
 };
 
-double StrainEnergy(double E2work[VECSIZE], double mu) {
+double StrainEnergy(double E2work[VECSIZE], double mu, double lambda) {
    
   // log(J)
   double detCm1 = computeDetCM1(E2work);
@@ -102,14 +102,15 @@ double StrainEnergy(double E2work[VECSIZE], double mu) {
   // trace(E)
   double traceE = (E2work[0] + E2work[1] + E2work[2]) / 2.;
 
-  return mu * (-logJ + traceE);
+  return lambda*logJ*logJ/2. + mu * (-logJ + traceE);
 };
 
-void S_autodiff(double *S_ad, double *E2work, double mu) {
+void S_autodiff(double *S_ad, double *E2work, double mu, double lambda) {
   for (int i=0; i<VECSIZE; i++) S_ad[i] = 0.;
   __enzyme_autodiff((void *)StrainEnergy, 
                      E2work, S_ad,
-                     enzyme_const, mu);
+                     enzyme_const, mu,
+                     enzyme_const, lambda);
   // The first 3 entries (diagonal in Voigt notation) worked with 2E here, but
   // we need the gradient with respect to E. The next three (off-diagonal
   // components) represent entries that appear twice in the matrix, thus they
@@ -120,6 +121,7 @@ void S_autodiff(double *S_ad, double *E2work, double mu) {
 
 int main() {
   double mu = 1.;
+  double lambda = 1.;
 
   double E2work[VECSIZE];
   E2work[0] = 0.5895232828911128;
@@ -130,13 +132,13 @@ int main() {
   E2work[5] = 0.6570956167695403;
 
   // Compute S with Enzyme-AD Forward mode
-  double strain_energy = StrainEnergy(E2work, mu);
+  double strain_energy = StrainEnergy(E2work, mu, lambda);
   double S_ad[VECSIZE];
-  S_autodiff(S_ad, E2work, mu);
+  S_autodiff(S_ad, E2work, mu, lambda);
   
   // Compute analytical S
   double S_an[VECSIZE];
-  S_analytical(S_an, E2work, mu);
+  S_analytical(S_an, E2work, mu, lambda);
 
   printf("\n\nStrain Energy   = ");
   printf("\t   %.6lf", strain_energy);
@@ -151,19 +153,3 @@ int main() {
 
   return 0;
 }
-
-/*
-
-Strain Energy   =          0.359631
-
-S_autodiff      =
-
-                0.190093858759          -0.062130869557         0.482363568176          0.114768327105          -0.043324623403        0.438162617768
-
-
-
-S_analytical    =
-
-                0.190092241607          -0.062132990331         0.482362534603          0.114768556264          -0.043324709910        0.438163492654
-
-*/
