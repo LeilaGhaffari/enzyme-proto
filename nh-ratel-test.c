@@ -14,19 +14,20 @@ int enzyme_const;
 
 double StrainEnergy(double E2work[VECSIZE], double mu, double lambda);
 
-double log1p_series_shifted(double x) {
-  double left = sqrt(2.)/2 - 1;
-  double right = sqrt(2.) - 1;
-  double sum = 0;
+double RatelLog1pSeriesShifted(double x) {
+  const double left = sqrt(2.) / 2 - 1, right = sqrt(2.) - 1;
+  double       sum = 0;
+  // Shift first
+  // Replace if with while for arbitrary range (may hurt vectorization)
   if (x < left) {
-      sum -= log(2.) / 2;
-      x = 1 + 2 * x;
+    sum -= log(2.) / 2;
+    x = 1 + 2 * x;
   } else if (right < x) {
-      sum += log(2.) / 2;
-      x = (x - 1) / 2;
+    sum += log(2.) / 2;
+    x = (x - 1) / 2;
   }
-  double y = x / (2. + x);
-  double y2 = y*y;
+  double       y  = x / (2. + x);
+  const double y2 = y * y;
   sum += y;
   y *= y2;
   sum += y / 3;
@@ -35,7 +36,7 @@ double log1p_series_shifted(double x) {
   y *= y2;
   sum += y / 7;
   return 2 * sum;
-};
+}
 
 double computeDetCM1(double *E2work) {
   return E2work[0]*(E2work[1]*E2work[2]-E2work[3]*E2work[3]) +
@@ -85,7 +86,7 @@ void S_analytical(double S_an[VECSIZE], double E2work[VECSIZE], double mu, doubl
 
   // Compute the Second Piola-Kirchhoff (S)
   int indj[VECSIZE] = {0, 1, 2, 1, 0, 0}, indk[VECSIZE] = {0, 1, 2, 2, 2, 1};
-  double logJ = log1p_series_shifted(detCm1) / 2.;
+  double logJ = RatelLog1pSeriesShifted(detCm1) / 2.;
   for ( int m = 0; m < VECSIZE; m++) {
       S_an[m] = lambda*logJ*Cinvwork[m];
       for ( int n = 0; n < 3; n++)
@@ -97,7 +98,7 @@ double StrainEnergy(double E2work[VECSIZE], double mu, double lambda) {
    
   // log(J)
   double detCm1 = computeDetCM1(E2work);
-  double logJ = log1p_series_shifted(detCm1) / 2.;
+  double logJ = RatelLog1pSeriesShifted(detCm1) / 2.;
 
   // trace(E)
   double traceE = (E2work[0] + E2work[1] + E2work[2]) / 2.;
