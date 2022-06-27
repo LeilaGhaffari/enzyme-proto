@@ -116,6 +116,7 @@ void S_autodiff(double *S_ad, double *E_Voigt, double mu, double lambda) {
                      E_Voigt, S_ad,
                      enzyme_const, mu,
                      enzyme_const, lambda);
+  for (int i=VECSIZE/2; i<VECSIZE; i++) S_ad[i] /= 2.;
 }
 
 int main() {
@@ -130,11 +131,26 @@ int main() {
   E_Voigt[4] = 0.0126503210747925/2;
   E_Voigt[5] = 0.6570956167695403/2;
 
+  double deltaE_Voigt[VECSIZE] = {0., 0., 0., 0., 0., 0.};
+  deltaE_Voigt[0] = 0.9681576729097205;
+  deltaE_Voigt[1] = 0.7994338113484318;
+  deltaE_Voigt[2] = 0.2755183472001872;
+  deltaE_Voigt[3] = 0.6500440500146469;
+  deltaE_Voigt[4] = 0.0593948875992271;
+  deltaE_Voigt[5] = 0.6002528007029311;
+
   // Compute S with Enzyme-AD Forward mode
   double strain_energy = StrainEnergy(E_Voigt, mu, lambda);
   double S_ad[VECSIZE];
   S_autodiff(S_ad, E_Voigt, mu, lambda);
   
+    /*double deltaS_Voigt[VECSIZE];
+      __enzyme_autodiff((void *)S_autodiff, 
+                        (double *)NULL, deltaS_Voigt,
+                        (double *)NULL, deltaE_Voigt, 
+                        enzyme_const, mu, 
+                        enzyme_const, lambda);*/
+
   // Compute analytical S
   double S_an[VECSIZE];
   S_analytical(S_an, E_Voigt, mu, lambda);
@@ -145,6 +161,10 @@ int main() {
   printf("\n\nS_autodiff      =\n\n");
   for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", S_ad[i]);
   printf("\n\n");
+    
+  /* printf("\n\ndeltaS      =\n\n");
+  for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", deltaS_Voigt[i]);
+  printf("\n\n");*/
 
   printf("\n\nS_analytical    =\n\n");
   for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", S_an[i]);
