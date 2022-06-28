@@ -15,25 +15,14 @@ int enzyme_const;
 double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda);
 
 double log1p_series_shifted(double x) {
-  double left = sqrt(2.)/2 - 1;
-  double right = sqrt(2.) - 1;
   double sum = 0;
-  if (x < left) {
-      sum -= log(2.) / 2;
-      x = 1 + 2 * x;
-  } else if (right < x) {
-      sum += log(2.) / 2;
-      x = (x - 1) / 2;
-  }
   double y = x / (2. + x);
   double y2 = y*y;
   sum += y;
-  y *= y2;
-  sum += y / 3;
-  y *= y2;
-  sum += y / 5;
-  y *= y2;
-  sum += y / 7;
+  for (int i=0; i<5; i++) {
+    y *= y2;
+    sum += y / (2*i + 3);
+  }
   return 2 * sum;
 };
 
