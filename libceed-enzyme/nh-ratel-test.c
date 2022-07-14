@@ -65,30 +65,6 @@ double log1p_series(double x) {
   return 2 * sum;
 };
 
-/* non-ratel functions
-double computeDetCM1(double *E2_Voigt) {
-  return E2_Voigt[0]*(E2_Voigt[1]*E2_Voigt[2]-E2_Voigt[3]*E2_Voigt[3]) +
-         E2_Voigt[5]*(E2_Voigt[4]*E2_Voigt[3]-E2_Voigt[5]*E2_Voigt[2]) +
-         E2_Voigt[4]*(E2_Voigt[5]*E2_Voigt[3]-E2_Voigt[4]*E2_Voigt[1]) +
-         E2_Voigt[0] + E2_Voigt[1] + E2_Voigt[2] +
-         E2_Voigt[0]*E2_Voigt[1] + E2_Voigt[0]*E2_Voigt[2] +
-         E2_Voigt[1]*E2_Voigt[2] - E2_Voigt[5]*E2_Voigt[5] -
-         E2_Voigt[4]*E2_Voigt[4] - E2_Voigt[3]*E2_Voigt[3];
-};
-
-int computeMatinvSym(double A[3][3], double detA, double *Ainv) {
-  // Compute A^(-1) : A-Inverse
-  double B[VECSIZE] = {A[1][1]*A[2][2] - A[1][2]*A[2][1], 
-                 A[0][0]*A[2][2] - A[0][2]*A[2][0], 
-                 A[0][0]*A[1][1] - A[0][1]*A[1][0], 
-                 A[0][2]*A[1][0] - A[0][0]*A[1][2], 
-                 A[0][1]*A[1][2] - A[0][2]*A[1][1], 
-                 A[0][2]*A[2][1] - A[0][1]*A[2][2]  
-                };               
-  for ( int m = 0; m < VECSIZE; m++) Ainv[m] = B[m] / (detA);
-  return 0;
-};*/
-
 void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, double lambda) {
   double E2_Voigt[VECSIZE];
   for(int i = 0; i<6; i++) E2_Voigt[i] = 2*E_Voigt[i];
@@ -161,14 +137,6 @@ int main() {
   E_Voigt[3] = 0.2190993957421843/2;
   E_Voigt[4] = 0.0126503210747925/2;
   E_Voigt[5] = 0.6570956167695403/2;
-
-  double deltaE_Voigt[VECSIZE] = {0., 0., 0., 0., 0., 0.};
-  deltaE_Voigt[0] = 0.9681576729097205;
-  deltaE_Voigt[1] = 0.7994338113484318;
-  deltaE_Voigt[2] = 0.2755183472001872;
-  deltaE_Voigt[3] = 0.6500440500146469;
-  deltaE_Voigt[4] = 0.0593948875992271;
-  deltaE_Voigt[5] = 0.6002528007029311;
 
   // Compute S with Enzyme-AD Forward mode
   double strain_energy = StrainEnergy(E_Voigt, mu, lambda);
