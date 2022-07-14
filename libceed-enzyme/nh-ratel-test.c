@@ -2,6 +2,7 @@
 // S = dStrainEnergy/dE
 
 #include <stdio.h>
+# include <stdlib.h>
 #include <math.h>
 #include <string.h>
 
@@ -52,7 +53,7 @@ double RatelMatDetAM1(const double A[3][3]) {
          A[0][1] * A[1][0] - A[0][2] * A[2][0] - A[1][2] * A[2][1];  /* *NOPAD* */
 }
 
-double log1p_series_shifted(double x) {
+double log1p_series(double x) {
   double sum = 0;
   double y = x / (2. + x);
   double y2 = y*y;
@@ -105,6 +106,7 @@ void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, doub
   double Cinv_Voigt[VECSIZE];
   double C_inv[3][3];
   double detCm1 = RatelMatDetAM1(E2);
+  double J = sqrt(detCm1 + 1);
   RatelMatComputeInverseSymmetric(C, detCm1+1, Cinv_Voigt);
   RatelVoigtUnpack(Cinv_Voigt, C_inv);
 
@@ -112,9 +114,9 @@ void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, doub
 
   // Compute the Second Piola-Kirchhoff (S)
   int indj[VECSIZE] = {0, 1, 2, 1, 0, 0}, indk[VECSIZE] = {0, 1, 2, 2, 2, 1};
-  double logJ = log1p_series_shifted(detCm1) / 2.;
+  double logJ = log1p_series(detCm1) / 2.;
   for ( int m = 0; m < VECSIZE; m++) {
-      S_an[m] = lambda*logJ*Cinv_Voigt[m];;
+      S_an[m] = lambda*J*J*Cinv_Voigt[m]/2.;
       for ( int n = 0; n < 3; n++)
           S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
@@ -130,7 +132,7 @@ double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda) {
   RatelVoigtUnpack(E2_Voigt, E2);
   double detCm1 = RatelMatDetAM1(E2);
   double J = sqrt(detCm1 + 1);
-  double logJ = log1p_series_shifted(detCm1) / 2.;
+  double logJ = log1p_series(detCm1) / 2.;
 
   // trace(E)
   double traceE = (E_Voigt[0] + E_Voigt[1] + E_Voigt[2]);
@@ -172,13 +174,6 @@ int main() {
   double strain_energy = StrainEnergy(E_Voigt, mu, lambda);
   double S_ad[VECSIZE];
   S_autodiff(S_ad, E_Voigt, mu, lambda);
-  
-    /*double deltaS_Voigt[VECSIZE];
-      __enzyme_autodiff((void *)S_autodiff, 
-                        (double *)NULL, deltaS_Voigt,
-                        (double *)NULL, deltaE_Voigt, 
-                        enzyme_const, mu, 
-                        enzyme_const, lambda);*/
 
   // Compute analytical S
   double S_an[VECSIZE];
@@ -190,10 +185,6 @@ int main() {
   printf("\n\nS_autodiff      =\n\n");
   for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", S_ad[i]);
   printf("\n\n");
-    
-  /* printf("\n\ndeltaS      =\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", deltaS_Voigt[i]);
-  printf("\n\n");*/
 
   printf("\n\nS_analytical    =\n\n");
   for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", S_an[i]);
@@ -201,3 +192,12 @@ int main() {
 
   return 0;
 }
+
+// Outputs
+// Strain Energy   =          0.578690
+
+// S_autodiff      =
+//  0.984899492472          0.980196822355          0.990348791746          0.002139828184          -0.000807777307         0.008169437878
+
+// S_analytical    =
+// 1.389589119252          1.510916770389          1.248998632432          -0.055207003871         0.020840441891          -0.210769346783
