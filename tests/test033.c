@@ -17,7 +17,7 @@ double log1p_like_function(double x) {
   return 2 * sum;
 }
 
-double test(double x) {
+double func(double x) {
   return log1p_like_function(x);
 }
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
   double x = 1.45;
 
   double f  = log1p_like_function(x);
-  double df = __enzyme_autodiff(test, x);
+  double df = __enzyme_autodiff(func, x);
 
   printf("f = %f \ndf = %f \n", f, df);
 
