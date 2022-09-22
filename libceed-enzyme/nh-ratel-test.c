@@ -30,12 +30,12 @@ double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda);
 int RatelMatComputeInverseSymmetric(const double A[3][3], const double det_A, double A_inv[6]) {
   // Compute A^(-1) : A-Inverse
   double B[6] = {
-      A[1][1] * A[2][2] - A[1][2] * A[2][1], /* *NOPAD* */
-      A[0][0] * A[2][2] - A[0][2] * A[2][0], /* *NOPAD* */
-      A[0][0] * A[1][1] - A[0][1] * A[1][0], /* *NOPAD* */
-      A[0][2] * A[1][0] - A[0][0] * A[1][2], /* *NOPAD* */
-      A[0][1] * A[1][2] - A[0][2] * A[1][1], /* *NOPAD* */
-      A[0][2] * A[2][1] - A[0][1] * A[2][2]  /* *NOPAD* */
+      A[1][1] * A[2][2] - A[1][2] * A[2][1],
+      A[0][0] * A[2][2] - A[0][2] * A[2][0],
+      A[0][0] * A[1][1] - A[0][1] * A[1][0],
+      A[0][2] * A[1][0] - A[0][0] * A[1][2],
+      A[0][1] * A[1][2] - A[0][2] * A[1][1],
+      A[0][2] * A[2][1] - A[0][1] * A[2][2] 
   };
   for (int m = 0; m < 6; m++) {
     A_inv[m] = B[m] / (det_A);
@@ -45,12 +45,12 @@ int RatelMatComputeInverseSymmetric(const double A[3][3], const double det_A, do
 }
 
 double RatelMatDetAM1(const double A[3][3]) {
-  return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) +         /* *NOPAD* */
-         A[0][1] * (A[1][2] * A[2][0] - A[1][0] * A[2][2]) +         /* *NOPAD* */
-         A[0][2] * (A[1][0] * A[2][1] - A[2][0] * A[1][1]) +         /* *NOPAD* */
-         A[0][0] + A[1][1] + A[2][2] +                               /* *NOPAD* */
-         A[0][0] * A[1][1] + A[0][0] * A[2][2] + A[1][1] * A[2][2] - /* *NOPAD* */
-         A[0][1] * A[1][0] - A[0][2] * A[2][0] - A[1][2] * A[2][1];  /* *NOPAD* */
+  return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) +        
+         A[0][1] * (A[1][2] * A[2][0] - A[1][0] * A[2][2]) +        
+         A[0][2] * (A[1][0] * A[2][1] - A[2][0] * A[1][1]) +        
+         A[0][0] + A[1][1] + A[2][2] +                              
+         A[0][0] * A[1][1] + A[0][0] * A[2][2] + A[1][1] * A[2][2] -
+         A[0][1] * A[1][0] - A[0][2] * A[2][0] - A[1][2] * A[2][1]; 
 }
 
 double log1p_series(double x) {
