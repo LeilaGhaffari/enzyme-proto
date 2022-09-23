@@ -91,3 +91,42 @@ void S_analytical(double S_an[6], double E_Voigt[6], double mu, double lambda) {
           S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
 };
+
+void GreenLagrangeStrain(const double grad_u[3][3], double E[6]) {
+  const int ind_j[6] = {0, 1, 2, 1, 0, 0}, ind_k[6] = {0, 1, 2, 2, 2, 1};
+  for (int m = 0; m < 6; m++) {
+    E[m] = (grad_u[ind_j[m]][ind_k[m]] + grad_u[ind_k[m]][ind_j[m]]) * 0.5;
+    for (int n = 0; n < 3; n++) {
+      E[m] += (grad_u[n][ind_j[m]] * grad_u[n][ind_k[m]]) * 0.5;
+    }
+  }
+};
+
+void ComputeCinverse(double E_Voigt[6], const double Jm1, double C_inv_Voigt[6]) {
+  double E[3][3];
+  RatelVoigtUnpack(E_Voigt, E);
+
+  // C : right Cauchy-Green tensor
+  // C = I + 2E
+  const double C[3][3] = {
+      {2 * E[0][0] + 1, 2 * E[0][1],     2 * E[0][2]    },
+      {2 * E[0][1],     2 * E[1][1] + 1, 2 * E[1][2]    },
+      {2 * E[0][2],     2 * E[1][2],     2 * E[2][2] + 1}
+  };
+
+  // Compute C^(-1) : C-Inverse
+  const double detC = (Jm1 + 1.) * (Jm1 + 1.);
+  RatelMatComputeInverseSymmetric(C, detC, C_inv_Voigt);
+}
+
+int RatelMatMatMult(const double alpha, const double A[3][3], const double B[3][3], double C[3][3]) {
+  for (int j = 0; j < 3; j++) {
+    for (int k = 0; k < 3; k++) {
+      C[j][k] = 0;
+      for (int m = 0; m < 3; m++) {
+        C[j][k] += alpha * A[j][m] * B[m][k];
+      }
+    }
+  }
+  return 0;
+}

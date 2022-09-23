@@ -48,48 +48,69 @@ int main() {
   double mu = 1.;
   double lambda = 1.;
 
+  double grad_u[3][3] = {
+    {0.0702417, 0.4799115, 0.3991242},
+    {0.6756593, 0.0633284, 0.0959267},
+    {0.2241923, 0.0281781, 0.0917613}
+  };
+
+  // Compute the Deformation Gradient : F = I + grad_u
+  const double F[3][3] = {
+    {grad_u[0][0] + 1, grad_u[0][1],     grad_u[0][2]    },
+    {grad_u[1][0],     grad_u[1][1] + 1, grad_u[1][2]    },
+    {grad_u[2][0],     grad_u[2][1],     grad_u[2][2] + 1}
+  };
+
+  const double temp_grad_u[3][3] = {
+    {grad_u[0][0], grad_u[0][1], grad_u[0][2]},
+    {grad_u[1][0], grad_u[1][1], grad_u[1][2]},
+    {grad_u[2][0], grad_u[2][1], grad_u[2][2]}
+  };
+   
+  // J-1
+  const double Jm1 = RatelMatDetAM1(temp_grad_u);
+
+  // Green Lagrange Strain Tensor: E (voigt)
   double E_Voigt[6];
-  E_Voigt[0] = 0.5895232828911128/2;
-  E_Voigt[1] = 0.2362491738162759/2;
-  E_Voigt[2] = 0.9793730522395296/2;
-  E_Voigt[3] = 0.2190993957421843/2;
-  E_Voigt[4] = 0.0126503210747925/2;
-  E_Voigt[5] = 0.6570956167695403/2;
+  GreenLagrangeStrain(temp_grad_u, E_Voigt);
 
-  // Compute S with Enzyme-AD Forward mode
+  // Strain energy
   double strain_energy = StrainEnergy(E_Voigt, mu, lambda);
-  double S_Voigt[6];
-  SecondPiolaKirchhoffStress_NeoHookean_AD(lambda, mu, E_Voigt, S_Voigt);
 
-  // Compute analytical S
-  double S_an[6];
-  S_analytical(S_an, E_Voigt, mu, lambda);
+  // Second Piola-Kirchhoff: S
+  double S_Voigt[6], S_an[6], S[3][3];
+  SecondPiolaKirchhoffStress_NeoHookean_AD(lambda, mu, E_Voigt, S_Voigt); // AD
+  S_analytical(S_an, E_Voigt, mu, lambda); // Analytical
+  RatelVoigtUnpack(S_Voigt, S); // Unpack Voigt S
 
-  printf("\n\nStrain Energy   = ");
-  printf("\t   %.6lf", strain_energy);
+  // First Piola-Kirchhoff: P = F*S
+  double P[3][3];
+  RatelMatMatMult(1.0, F, S, P);
 
-  printf("\n\nS_autodiff      =\n\n");
+  // Print Results
+  printf("\nStrain Energy = ");
+  printf("%.6lf", strain_energy);
+  printf("\nE_Voigt       =\n");
+  for (int i=0; i<FSInitialNH_AD_TAPE_SIZE; i++) printf("\t\t%.12lf", E_Voigt[i]);
+  printf("\n");
+  printf("\nS_autodiff    =\n");
   for (int i=0; i<FSInitialNH_AD_TAPE_SIZE; i++) printf("\t\t%.12lf", S_Voigt[i]);
-  printf("\n\n");
-
-  printf("\n\nS_analytical    =\n\n");
+  printf("\n");
+  printf("\nS_analytical  =\n");
   for (int i=0; i<FSInitialNH_AD_TAPE_SIZE; i++) printf("\t\t%.12lf", S_an[i]);
-  printf("\n\n");
-
+  printf("\n");
   return 0;
 }
 
 /* Output:
 
-Strain Energy   =          0.507029
+Strain Energy = 0.922657
+E_Voigt       =
+                0.326097486737          0.180888169699          0.180222397488          0.162154818512          0.368368803095          0.619193167536
 
-S_autodiff      =
+S_autodiff    =
+                -2.243659385920         -2.164756543395         -0.329653364318         -0.698950459026         1.116803018811          2.683783945834
 
-                0.629897288210          0.514638184498          0.763455742111          0.052445668610          -0.019798047937         0.200227118654
-
-
-
-S_analytical    =
-
-                0.629816767260          0.514532587340          0.763404278645          0.052457078889          -0.019802355275         0.200270680826
+S_analytical  =
+                -2.243659409307         -2.164756566213         -0.329653373905         -0.698950464066         1.116803026863          2.683783965185
 */
