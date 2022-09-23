@@ -92,7 +92,7 @@ void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, doub
   int indj[VECSIZE] = {0, 1, 2, 1, 0, 0}, indk[VECSIZE] = {0, 1, 2, 2, 2, 1};
   double logJ = log1p_series(detCm1) / 2.;
   for ( int m = 0; m < VECSIZE; m++) {
-      S_an[m] = lambda*J*J*Cinv_Voigt[m]/2.;
+      S_an[m] = lambda*logJ*Cinv_Voigt[m];
       for ( int n = 0; n < 3; n++)
           S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
@@ -113,8 +113,8 @@ double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda) {
   // trace(E)
   double traceE = (E_Voigt[0] + E_Voigt[1] + E_Voigt[2]);
 
-  return lambda*(J*J - 1)/4 - lambda*logJ/2  + mu * (-logJ + traceE);
-  // return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
+  //return lambda*(J*J - 1)/4 - lambda*logJ/2  + mu * (-logJ + traceE);
+  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
 };
 
 void S_autodiff(double *S_ad, double *E_Voigt, double mu, double lambda) {
