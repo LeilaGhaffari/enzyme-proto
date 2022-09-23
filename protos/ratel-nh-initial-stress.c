@@ -86,8 +86,6 @@ void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, doub
   RatelMatComputeInverseSymmetric(C, detCm1+1, Cinv_Voigt);
   RatelVoigtUnpack(Cinv_Voigt, C_inv);
 
-
-
   // Compute the Second Piola-Kirchhoff (S)
   int indj[VECSIZE] = {0, 1, 2, 1, 0, 0}, indk[VECSIZE] = {0, 1, 2, 2, 2, 1};
   double logJ = log1p_series(detCm1) / 2.;
@@ -161,11 +159,17 @@ int main() {
   return 0;
 }
 
-// Outputs
-// Strain Energy   =          0.578690
+/* Outputs
 
-// S_autodiff      =
-//  0.984899492472          0.980196822355          0.990348791746          0.002139828184          -0.000807777307         0.008169437878
+Strain Energy   =          0.507029
 
-// S_analytical    =
-// 1.389589119252          1.510916770389          1.248998632432          -0.055207003871         0.020840441891          -0.210769346783
+S_autodiff      =
+
+                0.629897288210          0.514638184498          0.763455742111          0.052445668610          -0.019798047937         0.200227118654
+
+
+
+S_analytical    =
+
+                0.629816767260          0.514532587340          0.763404278645          0.052457078889          -0.019802355275         0.200270680826
+*/

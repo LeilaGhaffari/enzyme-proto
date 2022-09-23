@@ -1,5 +1,4 @@
 // Standard Neo-Hookean formulation in initial configuration with Enzyme-AD
-// S = dStrainEnergy/dE
 
 #include <stdio.h>
 # include <stdlib.h>
@@ -171,5 +170,5 @@ S_autodiff      =
 
 S_analytical    =
 
-                1.389589119252          1.510916770389          1.248998632432          -0.055207003871         0.020840441891          -0.210769346783
+                0.629816767260          0.514532587340          0.763404278645          0.052457078889          -0.019802355275         0.200270680826
 */
