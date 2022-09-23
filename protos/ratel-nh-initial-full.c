@@ -5,14 +5,14 @@
 #include <math.h>
 #include <string.h>
 
-#define VECSIZE 6
+static const int FSInitialNH_AD_TAPE_SIZE = 6;
 
 double __enzyme_autodiff(void*, ...);
 
 int enzyme_dup;
 int enzyme_const;
 
-double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda);
+double StrainEnergy(double E_Voigt[6], double mu, double lambda);
 
  void RatelVoigtUnpack(const double sym[6], double full[3][3]) {
   full[0][0] = sym[0];
@@ -64,8 +64,8 @@ double log1p_series(double x) {
   return 2 * sum;
 };
 
-void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, double lambda) {
-  double E2_Voigt[VECSIZE];
+void S_analytical(double S_an[6], double E_Voigt[6], double mu, double lambda) {
+  double E2_Voigt[6];
   for(int i = 0; i<6; i++) E2_Voigt[i] = 2*E_Voigt[i];
 
   double E2[3][3];
@@ -78,7 +78,7 @@ void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, doub
                    };
 
   // Compute C^(-1) : C-Inverse
-  double Cinv_Voigt[VECSIZE];
+  double Cinv_Voigt[6];
   double C_inv[3][3];
   double detCm1 = RatelMatDetAM1(E2);
   double J = sqrt(detCm1 + 1);
@@ -86,18 +86,18 @@ void S_analytical(double S_an[VECSIZE], double E_Voigt[VECSIZE], double mu, doub
   RatelVoigtUnpack(Cinv_Voigt, C_inv);
 
   // Compute the Second Piola-Kirchhoff (S)
-  int indj[VECSIZE] = {0, 1, 2, 1, 0, 0}, indk[VECSIZE] = {0, 1, 2, 2, 2, 1};
+  int indj[6] = {0, 1, 2, 1, 0, 0}, indk[6] = {0, 1, 2, 2, 2, 1};
   double logJ = log1p_series(detCm1) / 2.;
-  for ( int m = 0; m < VECSIZE; m++) {
+  for ( int m = 0; m < FSInitialNH_AD_TAPE_SIZE; m++) {
       S_an[m] = lambda*logJ*Cinv_Voigt[m];
       for ( int n = 0; n < 3; n++)
           S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
 };
 
-double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda) {
+double StrainEnergy(double E_Voigt[6], double mu, double lambda) {
   // Calculate 2*E 
-  double E2_Voigt[VECSIZE];
+  double E2_Voigt[6];
   for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i]*2; 
 
   // log(J)
@@ -115,19 +115,19 @@ double StrainEnergy(double E_Voigt[VECSIZE], double mu, double lambda) {
 };
 
 void S_autodiff(double *S_ad, double *E_Voigt, double mu, double lambda) {
-  for (int i=0; i<VECSIZE; i++) S_ad[i] = 0.;
+  for (int i=0; i<FSInitialNH_AD_TAPE_SIZE; i++) S_ad[i] = 0.;
   __enzyme_autodiff((void *)StrainEnergy, 
                      E_Voigt, S_ad,
                      enzyme_const, mu,
                      enzyme_const, lambda);
-  for (int i=VECSIZE/2; i<VECSIZE; i++) S_ad[i] /= 2.;
+  for (int i=FSInitialNH_AD_TAPE_SIZE/2; i<FSInitialNH_AD_TAPE_SIZE; i++) S_ad[i] /= 2.;
 }
 
 int main() {
   double mu = 1.;
   double lambda = 1.;
 
-  double E_Voigt[VECSIZE];
+  double E_Voigt[6];
   E_Voigt[0] = 0.5895232828911128/2;
   E_Voigt[1] = 0.2362491738162759/2;
   E_Voigt[2] = 0.9793730522395296/2;
@@ -137,22 +137,22 @@ int main() {
 
   // Compute S with Enzyme-AD Forward mode
   double strain_energy = StrainEnergy(E_Voigt, mu, lambda);
-  double S_ad[VECSIZE];
+  double S_ad[6];
   S_autodiff(S_ad, E_Voigt, mu, lambda);
 
   // Compute analytical S
-  double S_an[VECSIZE];
+  double S_an[6];
   S_analytical(S_an, E_Voigt, mu, lambda);
 
   printf("\n\nStrain Energy   = ");
   printf("\t   %.6lf", strain_energy);
 
   printf("\n\nS_autodiff      =\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", S_ad[i]);
+  for (int i=0; i<FSInitialNH_AD_TAPE_SIZE; i++) printf("\t\t%.12lf", S_ad[i]);
   printf("\n\n");
 
   printf("\n\nS_analytical    =\n\n");
-  for (int i=0; i<VECSIZE; i++) printf("\t\t%.12lf", S_an[i]);
+  for (int i=0; i<FSInitialNH_AD_TAPE_SIZE; i++) printf("\t\t%.12lf", S_an[i]);
   printf("\n\n");
 
   return 0;
