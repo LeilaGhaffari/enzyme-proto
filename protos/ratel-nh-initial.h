@@ -1,4 +1,3 @@
-static const int FSInitialNH_AD_TAPE_SIZE = 6;
 
 void RatelVoigtUnpack(const double sym[6], double full[3][3]) {
   full[0][0] = sym[0];
