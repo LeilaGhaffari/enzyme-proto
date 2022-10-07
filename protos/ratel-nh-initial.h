@@ -61,14 +61,14 @@ double RatelLog1pSeries(double x) {
 
 double RatelVoigtTrace(double V[6]) { return V[0] + V[1] + V[2]; }
 
-void S_analytical(double S_an[6], double E_Voigt[6], double mu, double lambda) {
+void SecondPiolaKirchhoffStress_NeoHookean_Analytical(const double lambda, const double mu, double E_Voigt[6], double S_Voigt[6]) {
   double E2_Voigt[6];
   for(int i = 0; i<6; i++) E2_Voigt[i] = 2*E_Voigt[i];
 
   double E2[3][3];
   RatelVoigtUnpack(E2_Voigt, E2);
    
-  // C : right Cauchy-Green tensor
+  // Right Cauchy-Green tensor
   double C[3][3] = {{1 + E2[0][0], E2[0][1], E2[0][2]},
                     {E2[0][1], 1 + E2[1][1], E2[1][2]},
                     {E2[0][2], E2[1][2], 1 + E2[2][2]}
@@ -78,17 +78,16 @@ void S_analytical(double S_an[6], double E_Voigt[6], double mu, double lambda) {
   double Cinv_Voigt[6];
   double C_inv[3][3];
   double detCm1 = RatelMatDetAM1(E2);
-  double J = sqrt(detCm1 + 1);
   RatelMatComputeInverseSymmetric(C, detCm1+1, Cinv_Voigt);
   RatelVoigtUnpack(Cinv_Voigt, C_inv);
 
   // Compute the Second Piola-Kirchhoff (S)
   int indj[6] = {0, 1, 2, 1, 0, 0}, indk[6] = {0, 1, 2, 2, 2, 1};
   double logJ = RatelLog1pSeries(detCm1) / 2.;
-  for ( int m = 0; m < FSInitialNH_AD_TAPE_SIZE; m++) {
-      S_an[m] = lambda*logJ*Cinv_Voigt[m];
+  for ( int m = 0; m < 6; m++) {
+      S_Voigt[m] = lambda*logJ*Cinv_Voigt[m];
       for ( int n = 0; n < 3; n++)
-          S_an[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
+          S_Voigt[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
 };
 
@@ -125,6 +124,22 @@ int RatelMatMatMult(const double alpha, const double A[3][3], const double B[3][
       C[j][k] = 0;
       for (int m = 0; m < 3; m++) {
         C[j][k] += alpha * A[j][m] * B[m][k];
+      }
+    }
+  }
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+// Compute A * B + C * D = E
+// -----------------------------------------------------------------------------
+int RatelMatMatMultPlusMatMatMult(const double A[3][3], const double B[3][3], const double C[3][3],
+                                  const double D[3][3], double E[3][3]) {
+  for (int j = 0; j < 3; j++) {
+    for (int k = 0; k < 3; k++) {
+      E[j][k] = 0;
+      for (int m = 0; m < 3; m++) {
+        E[j][k] += A[j][m] * B[m][k] + C[j][m] * D[m][k];
       }
     }
   }
