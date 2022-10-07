@@ -124,44 +124,29 @@ int main() {
   SecondPiolaKirchhoffStress_NeoHookean_Analytical(lambda, mu, E_Voigt, S_an); // Analytical
 
   double S_Voigt[6], tape[6];
-  S_fwd(S_Voigt, E_Voigt, lambda, mu, tape);
-
-  double S[3][3];
-  RatelVoigtUnpack(S_Voigt, S); // Unpack Voigt S
-
-  // First Piola-Kirchhoff: P = F*S
-  double P[3][3];
-  RatelMatMatMult(1.0, F, S, P);                                   
+  S_fwd(S_Voigt, E_Voigt, lambda, mu, tape);                              
 
   // Compute delta_S_Voigt with Enzyme-AD
   double delta_S_Voigt[6];
   grad_S(delta_S_Voigt, delta_E_Voigt, lambda, mu, tape);
 
-  double deltaS[3][3];
-  RatelVoigtUnpack(delta_S_Voigt, deltaS);
-  
-  // delta_P = dPdF:deltaF = deltaF*S + F*deltaS
-  double dP[3][3];
-  RatelMatMatMultPlusMatMatMult(grad_delta_u, S, F, deltaS, dP);
-
   printf("\n\nStrain Energy = ");
   printf("\t   %.6lf", strain_energy);
 
-  printf("\n\nS_autodiff    =\n\n");
+  printf("\n\nS_ad from psi =\n\n");
   for (int i=0; i<6; i++) printf("\t\t%.12lf", S_ad[i]);
+  printf("\n\n");
+
+  printf("\n\nS_ad from fwd =\n\n");
+  for (int i=0; i<6; i++) printf("\t\t%.12lf", S_Voigt[i]);
   printf("\n\n");
 
   printf("\n\nS_analytical  =\n\n");
   for (int i=0; i<6; i++) printf("\t\t%.12lf", S_an[i]);
   printf("\n\n");
 
-  printf("\n\ndFirstPiola   =\n\n");
-  for (int i=0; i<3; i++) { 
-    for (int j=0; j<3; j++) {
-      printf("\t\t%.12lf", dP[i][j]);
-    }
-    printf("\n");
-  }
+  printf("\n\ndS_ad         =\n\n");
+  for (int i=0; i<6; i++) printf("\t\t%.12lf", delta_S_Voigt[i]);
   printf("\n\n");
 
   return 0;
@@ -169,12 +154,17 @@ int main() {
 
 /* Output:
 
-
 Strain Energy =            0.922657
 
-S_autodiff    =
+S_ad from psi =
 
                 -2.243659385920         -2.164756543395         -0.329653364318         -0.698950459026         1.116803018811          2.683783945834
+
+
+
+S_ad from fwd =
+
+                -2.243659409307         -2.164756566213         -0.329653373905         -0.698950464066         1.116803026863          2.683783965185
 
 
 
@@ -184,10 +174,8 @@ S_analytical  =
 
 
 
-dFirstPiola   =
+dS_ad         =
 
-                1.425551218256          -0.721088308555         -0.098900275714
-                -0.677275996358         1.408175055015          0.949490830271
-                0.182057651630          0.524039836438          2.094378378867
+                2.533391359245          2.921533726694          2.575081725908          1.872573511865          -1.796081277841         -2.446521233043
 
 */

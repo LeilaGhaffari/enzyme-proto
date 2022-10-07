@@ -128,19 +128,3 @@ int RatelMatMatMult(const double alpha, const double A[3][3], const double B[3][
   }
   return 0;
 }
-
-// -----------------------------------------------------------------------------
-// Compute A * B + C * D = E
-// -----------------------------------------------------------------------------
-int RatelMatMatMultPlusMatMatMult(const double A[3][3], const double B[3][3], const double C[3][3],
-                                  const double D[3][3], double E[3][3]) {
-  for (int j = 0; j < 3; j++) {
-    for (int k = 0; k < 3; k++) {
-      E[j][k] = 0;
-      for (int m = 0; m < 3; m++) {
-        E[j][k] += A[j][m] * B[m][k] + C[j][m] * D[m][k];
-      }
-    }
-  }
-  return 0;
-}
