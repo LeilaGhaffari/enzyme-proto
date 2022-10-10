@@ -35,6 +35,8 @@ void __enzyme_fwdsplit(void *, ...);
 int  __enzyme_augmentsize(void *, ...);
 extern int enzyme_tape, enzyme_const, enzyme_dup, enzyme_nofree, enzyme_allocated;
 
+void *__enzyme_function_like[2] = {(void *)RatelLog1pSeries, "log1p"};
+
 //  Compute Second Piola Kirchhoff stress:
 void SecondPiolaKirchhoffStress_NeoHookean_AD(const double lambda, const double mu, double * __restrict__ E_Voigt, double * __restrict__ S_Voigt) {
   for (int i = 0; i < 6; i++) S_Voigt[i] = 0.;
