@@ -6,50 +6,15 @@
 #include <string.h>
 #include "ratel-nh-initial.h"
 
-// ----------------------------------------------------------------------------
-// Strain Energy Function
-// ----------------------------------------------------------------------------
-double StrainEnergy(double E_Voigt[6], double lambda, double mu) {
-  // Calculate 2*E 
-  double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i] * 2; 
-
-  // log(J)
-  double detCm1 = RatelVoigtDetAM1(E2_Voigt);
-  //double J      = sqrt(detCm1 + 1);
-  double logJ   = RatelLog1pSeries(detCm1) / 2.;
-
-  // trace(E)
-  double traceE = RatelVoigtTrace(E_Voigt);
-
-  //return lambda*(J*J - 1)/4 - lambda*logJ/2  + mu * (-logJ + traceE);
-  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
-};
-
 // -----------------------------------------------------------------------------
 // Enzyme-AD
 // -----------------------------------------------------------------------------
-void __enzyme_autodiff(void *, ...);
-void __enzyme_augmentfwd(void *, ...);
-void __enzyme_fwdsplit(void *, ...);
 void __enzyme_fwddiff(void *, ...);
-int  __enzyme_augmentsize(void *, ...);
 extern int enzyme_tape, enzyme_const, enzyme_dup, enzyme_nofree, enzyme_allocated;
 
 void *__enzyme_function_like[2] = {(void *)RatelLog1pSeries, "log1p"};
 
-//  Compute Second Piola Kirchhoff stress:
-void SecondPiolaKirchhoffStress_NeoHookean_AD(const double lambda, const double mu, double * __restrict__ E_Voigt, double * __restrict__ S_Voigt) {
-  for (int i = 0; i < 6; i++) S_Voigt[i] = 0.;
-  __enzyme_autodiff((void *)StrainEnergy, 
-                    E_Voigt, S_Voigt, 
-                    enzyme_const, lambda, 
-                    enzyme_const, mu);
-  for (int i = 3; i < 6; i++) S_Voigt[i] /= 2.;
-};
-
-void grad_S(double *dS, double *dE, double *S, double *E, const double lambda, const double mu) {
-  for (int i=0; i<6; i++) dS[i] = 0;             
+void grad_S(double *dS, double *dE, double *S, double *E, const double lambda, const double mu) {     
   __enzyme_fwddiff((void *)SecondPiolaKirchhoffStress_NeoHookean_Analytical, 
                     enzyme_const, lambda, 
                     enzyme_const, mu, 
@@ -106,23 +71,12 @@ int main() {
   double E_Voigt[6];
   GreenLagrangeStrain(temp_grad_u, E_Voigt);
 
-  // Strain energy
-  double strain_energy = StrainEnergy(E_Voigt, mu, lambda);
-
-  // Second Piola-Kirchhoff: S
-  double S_ad[6], S_an[6];
-  SecondPiolaKirchhoffStress_NeoHookean_AD(lambda, mu, E_Voigt, S_ad); // AD
-  SecondPiolaKirchhoffStress_NeoHookean_Analytical(lambda, mu, E_Voigt, S_an); // Analytical                      
-
   // Compute delta_S_Voigt with Enzyme-AD
-  double delta_S_Voigt[6];
-  grad_S(delta_S_Voigt, delta_E_Voigt, S_an, E_Voigt, lambda, mu);
+  double S_Voigt[6], delta_S_Voigt[6];
+  grad_S(delta_S_Voigt, delta_E_Voigt, S_Voigt, E_Voigt, lambda, mu);
 
-  printf("\n\nStrain Energy = ");
-  printf("\t   %.6lf", strain_energy);
-
-  printf("\n\nS_analytical  =\n\n");
-  for (int i=0; i<6; i++) printf("\t\t%.12lf", S_an[i]);
+  printf("\n\nS_ad         =\n\n");
+  for (int i=0; i<6; i++) printf("\t\t%.12lf", S_Voigt[i]);
   printf("\n\n");
 
   printf("\n\ndS_ad         =\n\n");
@@ -133,14 +87,6 @@ int main() {
 }
 
 /* Output:
-
-Strain Energy =            0.922657
-
-S_analytical  =
-
-                -2.243659409307         -2.164756566213         -0.329653373905         -0.698950464066         1.116803026863          2.683783965185
-
-
 
 dS_ad         =
 
