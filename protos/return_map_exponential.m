@@ -36,8 +36,23 @@ end
 % rotation angle
 theta = pi / 2;
 
-% Test the algorithm
+nstress = round(params(9));
+ndim    = round(params(11));
+
 [stress_el, isv_el, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n_vec, Fp_el_n, theta);
+
+% Test the algorithm
+quadrature_point = 5
+stress_q = zeros(ndim*nstress, ndim);
+for i=1:nstress
+    stress_q((i-1)*ndim+1 : i*ndim, :) = stress_el(:, :, i, quadrature_point);
+end
+isv_q = isv_el(:, quadrature_point);
+Fp_q = Fp_el(:, :, quadrature_point);
+
+save q_stress.log stress_q -ASCII
+save    q_isv.log    isv_q -ASCII
+save     q_Fp.log     Fp_q -ASCII
 
 % -------------------------------------------------------------------------------------------------
 %                                  Return mapping function
