@@ -5,13 +5,13 @@
 clc
 clear all
 
-coordsx = [ 0.0  0.0  0.0 ...
-            1.0  0.0  0.0 ...
-            1.0  1.0  0.0 ...
-            0.0  1.0  0.0 ...
-            0.0  0.0  1.0 ...
-            1.0  0.0  1.0 ...
-            1.0  1.0  1.0 ...
+coordsx = [ 0.0  0.0  0.0;
+            1.0  0.0  0.0;
+            1.0  1.0  0.0;
+            0.0  1.0  0.0;
+            0.0  0.0  1.0;
+            1.0  0.0  1.0;
+            1.0  1.0  1.0;
             0.0  1.0  1.0 ];
 
 d = [ 0             0            0          ...
@@ -55,16 +55,6 @@ save     q_Fp.log     Fp_q -ASCII
 % -------------------------------------------------------------------------------------------------
 function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,Fp_el_n,theta)
 
-    % nodal coordinates of elements in local node numbering
-    x1 = coordsx(1);  y1 = coordsx(2);  z1 = coordsx(3);
-    x2 = coordsx(4);  y2 = coordsx(5);  z2 = coordsx(6);
-    x3 = coordsx(7);  y3 = coordsx(8);  z3 = coordsx(9);
-    x4 = coordsx(10); y4 = coordsx(11); z4 = coordsx(12);
-    x5 = coordsx(13); y5 = coordsx(14); z5 = coordsx(15);
-    x6 = coordsx(16); y6 = coordsx(17); z6 = coordsx(18);
-    x7 = coordsx(19); y7 = coordsx(20); z7 = coordsx(21);
-    x8 = coordsx(22); y8 = coordsx(23); z8 = coordsx(24);
-
     %params = [ lambda mu Aphi Bphi Apsi Bpsi Hc numips nstress nisv ndim ];
     lambda  = params(1);
     mu      = params(2);
@@ -92,89 +82,21 @@ function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,
     eta  = -1 / sqrt(3);
     zeta =  1 / sqrt(3);
 
-    % derivatives of shape functions with respect to xi
-    dN1_dxi = -0.125*(1-eta)*(1-zeta);
-    dN2_dxi = -dN1_dxi;
-    dN3_dxi = 0.125*(1+eta)*(1-zeta);
-    dN4_dxi = -dN3_dxi;
-    dN5_dxi = -0.125*(1-eta)*(1+zeta);
-    dN6_dxi = -dN5_dxi;
-    dN7_dxi = 0.125*(1+eta)*(1+zeta);
-    dN8_dxi = -dN7_dxi;
-
-    % derivatives of shape functions with respect to eta
-    dN1_deta = -0.125*(1-xi)*(1-zeta);
-    dN2_deta = -0.125*(1+xi)*(1-zeta);
-    dN3_deta = -dN2_deta;
-    dN4_deta = -dN1_deta;
-    dN5_deta = -0.125*(1-xi)*(1+zeta);
-    dN6_deta = -0.125*(1+xi)*(1+zeta);
-    dN7_deta = -dN6_deta;
-    dN8_deta = -dN5_deta;
-
-    % derivatives of shape functions with respect to zeta
-    dN1_dzeta = -0.125*(1-xi)*(1-eta);
-    dN2_dzeta = -0.125*(1+xi)*(1-eta);
-    dN3_dzeta = -0.125*(1+xi)*(1+eta);
-    dN4_dzeta = -0.125*(1-xi)*(1+eta);
-    dN5_dzeta = -dN1_dzeta;
-    dN6_dzeta = -dN2_dzeta;
-    dN7_dzeta = -dN3_dzeta;
-    dN8_dzeta = -dN4_dzeta;
+    % gradient of shape functions
+    dNdX = grad_basis_linear(xi, eta, zeta);
 
     % calculate jacobian, its determinant, and its inverse
-    dx_dxi = dN1_dxi*x1 + dN2_dxi*x2 + dN3_dxi*x3 + dN4_dxi*x4 + ...
-        dN5_dxi*x5 + dN6_dxi*x6 + dN7_dxi*x7 + dN8_dxi*x8;
-    dx_deta = dN1_deta*x1 + dN2_deta*x2 + dN3_deta*x3 + dN4_deta*x4 +...
-        dN5_deta*x5 + dN6_deta*x6 + dN7_deta*x7 + dN8_deta*x8;
-    dx_dzeta = dN1_dzeta*x1 + dN2_dzeta*x2 + dN3_dzeta*x3 + dN4_dzeta*x4 +...
-        dN5_dzeta*x5 + dN6_dzeta*x6 + dN7_dzeta*x7 + dN8_dzeta*x8;
-    dy_dxi = dN1_dxi*y1 + dN2_dxi*y2 + dN3_dxi*y3 + dN4_dxi*y4 +...
-        dN5_dxi*y5 + dN6_dxi*y6 + dN7_dxi*y7 + dN8_dxi*y8;
-    dy_deta = dN1_deta*y1 + dN2_deta*y2 + dN3_deta*y3 + dN4_deta*y4 +...
-        dN5_deta*y5 + dN6_deta*y6 + dN7_deta*y7 + dN8_deta*y8;
-    dy_dzeta = dN1_dzeta*y1 + dN2_dzeta*y2 + dN3_dzeta*y3 + dN4_dzeta*y4 +...
-        dN5_dzeta*y5 + dN6_dzeta*y6 + dN7_dzeta*y7 + dN8_dzeta*y8;
-    dz_dxi = dN1_dxi*z1 + dN2_dxi*z2 + dN3_dxi*z3 + dN4_dxi*z4 +...
-        dN5_dxi*z5 + dN6_dxi*z6 + dN7_dxi*z7 + dN8_dxi*z8;
-    dz_deta = dN1_deta*z1 + dN2_deta*z2 + dN3_deta*z3 + dN4_deta*z4 +...
-        dN5_deta*z5 + dN6_deta*z6 + dN7_deta*z7 + dN8_deta*z8;
-    dz_dzeta = dN1_dzeta*z1 + dN2_dzeta*z2 + dN3_dzeta*z3 + dN4_dzeta*z4 +...
-        dN5_dzeta*z5 + dN6_dzeta*z6 + dN7_dzeta*z7 + dN8_dzeta*z8;
-    Je = [dx_dxi dx_deta dx_dzeta ; dy_dxi dy_deta dy_dzeta ; dz_dxi dz_deta dz_dzeta];
-    jdet=det(Je);
-    Jeinv=inv(Je);
+    Je    = dNdX * coordsx;
+    Jeinv = inv(Je);
 
     %shape function derivatives with respect to X,Y,Z
-    dN1_dx_vect = [dN1_dxi dN1_deta dN1_dzeta]*Jeinv;
-    dN2_dx_vect = [dN2_dxi dN2_deta dN2_dzeta]*Jeinv;
-    dN3_dx_vect = [dN3_dxi dN3_deta dN3_dzeta]*Jeinv;
-    dN4_dx_vect = [dN4_dxi dN4_deta dN4_dzeta]*Jeinv;
-    dN5_dx_vect = [dN5_dxi dN5_deta dN5_dzeta]*Jeinv;
-    dN6_dx_vect = [dN6_dxi dN6_deta dN6_dzeta]*Jeinv;
-    dN7_dx_vect = [dN7_dxi dN7_deta dN7_dzeta]*Jeinv;
-    dN8_dx_vect = [dN8_dxi dN8_deta dN8_dzeta]*Jeinv;
+    dN_dx = dNdX' * Jeinv;
 
     % strain-displacement matrix
-    Bu=[ dN1_dx_vect(1) 0 0 dN2_dx_vect(1) 0 0 dN3_dx_vect(1) 0 0 dN4_dx_vect(1) 0 0 ...
-         dN5_dx_vect(1) 0 0 dN6_dx_vect(1) 0 0 dN7_dx_vect(1) 0 0 dN8_dx_vect(1) 0 0; ...
-         dN1_dx_vect(2) 0 0 dN2_dx_vect(2) 0 0 dN3_dx_vect(2) 0 0 dN4_dx_vect(2) 0 0 ...
-         dN5_dx_vect(2) 0 0 dN6_dx_vect(2) 0 0 dN7_dx_vect(2) 0 0 dN8_dx_vect(2) 0 0; ...
-         dN1_dx_vect(3) 0 0 dN2_dx_vect(3) 0 0 dN3_dx_vect(3) 0 0 dN4_dx_vect(3) 0 0 ...
-         dN5_dx_vect(3) 0 0 dN6_dx_vect(3) 0 0 dN7_dx_vect(3) 0 0 dN8_dx_vect(3) 0 0; ...
-         0 dN1_dx_vect(1) 0 0 dN2_dx_vect(1) 0 0 dN3_dx_vect(1) 0 0 dN4_dx_vect(1) 0 ...
-         0 dN5_dx_vect(1) 0 0 dN6_dx_vect(1) 0 0 dN7_dx_vect(1) 0 0 dN8_dx_vect(1) 0; ...
-         0 dN1_dx_vect(2) 0 0 dN2_dx_vect(2) 0 0 dN3_dx_vect(2) 0 0 dN4_dx_vect(2) 0 ...
-         0 dN5_dx_vect(2) 0 0 dN6_dx_vect(2) 0 0 dN7_dx_vect(2) 0 0 dN8_dx_vect(2) 0; ...
-         0 dN1_dx_vect(3) 0 0 dN2_dx_vect(3) 0 0 dN3_dx_vect(3) 0 0 dN4_dx_vect(3) 0 ...
-         0 dN5_dx_vect(3) 0 0 dN6_dx_vect(3) 0 0 dN7_dx_vect(3) 0 0 dN8_dx_vect(3) 0; ...
-         0 0 dN1_dx_vect(1) 0 0 dN2_dx_vect(1) 0 0 dN3_dx_vect(1) 0 0 dN4_dx_vect(1) ...
-         0 0 dN5_dx_vect(1) 0 0 dN6_dx_vect(1) 0 0 dN7_dx_vect(1) 0 0 dN8_dx_vect(1); ...
-         0 0 dN1_dx_vect(2) 0 0 dN2_dx_vect(2) 0 0 dN3_dx_vect(2) 0 0 dN4_dx_vect(2) ...
-         0 0 dN5_dx_vect(2) 0 0 dN6_dx_vect(2) 0 0 dN7_dx_vect(2) 0 0 dN8_dx_vect(2); ...
-         0 0 dN1_dx_vect(3) 0 0 dN2_dx_vect(3) 0 0 dN3_dx_vect(3) 0 0 dN4_dx_vect(3) ...
-         0 0 dN5_dx_vect(3) 0 0 dN6_dx_vect(3) 0 0 dN7_dx_vect(3) 0 0 dN8_dx_vect(3)
-       ];
+    Bu = zeros(9, 24);
+    for k=1:8
+        Bu(:, (k-1)*3+1:k*3) = kron(eye(3), dN_dx(k,:)');
+    end
 
     % total deformation tensors
     dudX     = Bu*d';
