@@ -22,7 +22,7 @@ d = [ 0             0            0          ...
      -1.9717e-03    1.3689e-03   1.9148e-04 ...
      -1.5705e-03   -2.0123e-04   1.9148e-04 ];
 
-params = [ 1.5e+09 1.6e+09 1.633 0 1.633 0 306.19 8 6 5 3 ];
+params = [ 1.5e+09 1.6e+09 1.633 0 1.633 0 306.19 8 2 2 3 ];
 
 c_tau_n = 2.5e6;
 
@@ -71,16 +71,10 @@ function [stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n
     Fp_el    = zeros(ndim, ndim);
     stresses = zeros(ndim, ndim, nstress);
 
-    % integration points in natural coordinates (this is for the fifth quadrature point)
+    % Mapping from natural coordinates to physical coordinates (X -> x)
     X = [-1 -1  1] / sqrt(3);
-
-    % gradient of shape functions with respect to the natural coordinates
     dNdX = grad_basis_linear(X);
-
-    % calculate jacobian
     Je = dNdX * coordsx;
-
-    % gradient of shape functions with respect to the physical coordinates
     dN_dx = dNdX' / Je;
 
     % strain-displacement matrix
@@ -92,12 +86,9 @@ function [stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n
     % total deformation tensors
     dudX = Bu * d';
     Fdef = eye(3) + reshape(dudX, [3, 3])';
-    Jdef = det(Fdef);
-    Cdef = Fdef' * Fdef;
     bdef = Fdef  * Fdef';
 
-    % total strains
-    Estrain  = (Cdef - eye_mat) / 2;
+    % total strain
     estrain  = (eye_mat - inv(bdef)) / 2;
 
     % calculate trial elastic deformation gradient and left elastic Cauchy Green tensor
@@ -132,11 +123,6 @@ function [stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n
     dgdtau_princ_tr = dev_tau_princ_tr / dev_tau_tr_norm + Bpsi / 3;
     trace_dgdtau_tr = sum(dgdtau_princ_tr);
     dgdtau_tr       = coaxial(be_tr, dgdtau_princ_tr);
-
-    % dfdtau_tr
-    dfdtau_princ_tr = dev_tau_princ_tr / dev_tau_tr_norm + Bphi / 3;
-    trace_dfdtau_tr = sum(dfdtau_princ_tr);
-    dfdtau_tr       = coaxial(be_tr, dfdtau_princ_tr);;
 
     % check if elastic, or elasto-plastic
     if (f_tr < 0)  % elastic
@@ -223,32 +209,13 @@ function [stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n
 
         % update Dg
         Dg = Dg_iter;
-
-        % update be
-        Fe = Fdef / Fp;
-        be = Fe * Fe';
     end
 
-    % stresses
-    sigma   = tau / Jdef;            % Cauchy stress => \sigma = J^{-1} \tau
-    Pstress = tau / Fdef';           % First Piola   => P = \tau F^{-T}
-    Sstress = inv(Fdef) * Pstress;   % Second Piola  => S = F^{-1} P
-
-    % Store stress data
-    stresses(:, :, 1) = Sstress;
-    stresses(:, :, 2) = Pstress;
-    stresses(:, :, 3) = sigma;
-    stresses(:, :, 4) = Estrain;
-    stresses(:, :, 5) = estrain;
-    stresses(:, :, 6) = tau;
-
-    % calculate stress invariants for output
-    sig_mean = trace(sigma) / 3;
-    sig_dev  = sigma - sig_mean * eye_mat;
-    sig_VM   = sqrt(3/2) * norm(sig_dev);
+    stresses(:, :, 1) = estrain;
+    stresses(:, :, 2) = tau;
 
     % Store isv
-    isv = [ sig_mean sig_VM c_tau Dg Jdef ];
+    isv = [c_tau Dg];
 
     % return Fp
     Fp_el = Fp;
