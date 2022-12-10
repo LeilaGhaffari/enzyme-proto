@@ -22,27 +22,24 @@ d = [ 0             0            0          ...
      -1.9717e-03    1.3689e-03   1.9148e-04 ...
      -1.5705e-03   -2.0123e-04   1.9148e-04 ];
 
-params = [ 1.5e+09 1.6e+09 1.633 0 1.633 0 306.19 8 13 5 3 ];
+params = [ 1.5e+09 1.6e+09 1.633 0 1.633 0 306.19 8 6 5 3 ];
 
 c_tau_n = 2.5e6;
 
 % Fp
 Fp_el_n = eye(3);
 
-% rotation angle
-theta = pi / 2;
-
 nstress = round(params(9));
 ndim    = round(params(11));
 
-[stress_el, isv_el, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n, Fp_el_n, theta);
+[stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n, Fp_el_n);
 
 % Test the algorithm
 stress_q = zeros(ndim*nstress, ndim);
 for i=1:nstress
-    stress_q((i-1)*ndim+1 : i*ndim, :) = stress_el(:, :, i);
+    stress_q((i-1)*ndim+1 : i*ndim, :) = stresses(:, :, i);
 end
-isv_q = isv_el';
+isv_q = isv';
 Fp_q = Fp_el;
 
 save q_stress.log stress_q -ASCII
@@ -52,7 +49,7 @@ save     q_Fp.log     Fp_q -ASCII
 % -------------------------------------------------------------------------------------------------
 %                                  Return mapping function
 % -------------------------------------------------------------------------------------------------
-function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,Fp_el_n,theta)
+function [stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n, Fp_n)
 
     % Helper function: 3x3 identity matrix
     eye_mat = eye(3);
@@ -70,9 +67,9 @@ function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,
     ndim    = round(params(11));
 
     % initialize
-    isv_el    = zeros(nisv);
-    Fp_el     = zeros(ndim, ndim);
-    stress_el = zeros(ndim, ndim, nstress);
+    isv      = zeros(nisv);
+    Fp_el    = zeros(ndim, ndim);
+    stresses = zeros(ndim, ndim, nstress);
 
     % integration points in natural coordinates (this is for the fifth quadrature point)
     X = [-1 -1  1] / sqrt(3);
@@ -98,21 +95,12 @@ function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,
     Jdef = det(Fdef);
     Cdef = Fdef' * Fdef;
     bdef = Fdef  * Fdef';
-    vdef = sqrtm(bdef);
 
     % total strains
     Estrain  = (Cdef - eye_mat) / 2;
     estrain  = (eye_mat - inv(bdef)) / 2;
-    eHstrain = logm(vdef);
-
-    % total principal Hencky strain
-    lambda_eig     = eig(eHstrain);
-    eHstrain_princ = [ max(lambda_eig)  0              0 ;
-                       0                lambda_eig(2)  0 ;
-                       0                0              min(lambda_eig) ];
 
     % calculate trial elastic deformation gradient and left elastic Cauchy Green tensor
-    Fp_n  = Fp_el_n(:, :);
     Fe_tr = Fdef / Fp_n;
     be_tr = Fe_tr * Fe_tr';
 
@@ -237,7 +225,7 @@ function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,
         Dg = Dg_iter;
 
         % update be
-        Fe = Fdef * inv(Fp);
+        Fe = Fdef / Fp;
         be = Fe * Fe';
     end
 
@@ -246,40 +234,21 @@ function [stress_el,isv_el,Fp_el] = element_stress_isv(coordsx,d,params,c_tau_n,
     Pstress = tau / Fdef';           % First Piola   => P = \tau F^{-T}
     Sstress = inv(Fdef) * Pstress;   % Second Piola  => S = F^{-1} P
 
-    % rotate stress for non-rotating case
-    Qrot = [  cos(theta) sin(theta) 0;
-             -sin(theta) cos(theta) 0;
-              0          0          1 ];
-    sigma_rot = Qrot * sigma * Qrot';
-
-    % principal Cauchy stress
-    lambda_eig  = eig(sigma);
-    sigma_princ = [ max(lambda_eig)  0              0 ;
-                    0                lambda_eig(2)  0 ;
-                    0                0              min(lambda_eig) ];
-
-    % order of storage: S,P,sig,E,e,le,tau,be,dfdtau,dgdtau,sig_princ,sig_rot,le_princ
-    stress_el(:, :,  1) = Sstress;
-    stress_el(:, :,  2) = Pstress;
-    stress_el(:, :,  3) = sigma;
-    stress_el(:, :,  4) = Estrain;
-    stress_el(:, :,  5) = estrain;
-    stress_el(:, :,  6) = eHstrain;
-    stress_el(:, :,  7) = tau;
-    stress_el(:, :,  8) = be;
-    stress_el(:, :,  9) = dfdtau_tr;
-    stress_el(:, :, 10) = dgdtau_tr;
-    stress_el(:, :, 11) = sigma_princ;
-    stress_el(:, :, 12) = sigma_rot;
-    stress_el(:, :, 13) = eHstrain_princ;
+    % Store stress data
+    stresses(:, :, 1) = Sstress;
+    stresses(:, :, 2) = Pstress;
+    stresses(:, :, 3) = sigma;
+    stresses(:, :, 4) = Estrain;
+    stresses(:, :, 5) = estrain;
+    stresses(:, :, 6) = tau;
 
     % calculate stress invariants for output
     sig_mean = trace(sigma) / 3;
     sig_dev  = sigma - sig_mean * eye_mat;
     sig_VM   = sqrt(3/2) * norm(sig_dev);
 
-    % order of storage: p, q, c_tau, Dg, Jdef
-    isv_el = [ sig_mean sig_VM c_tau Dg Jdef ];
+    % Store isv
+    isv = [ sig_mean sig_VM c_tau Dg Jdef ];
 
     % return Fp
     Fp_el = Fp;
