@@ -32,7 +32,7 @@ Fp_el_n = eye(3);
 nstress = round(params(9));
 ndim    = round(params(11));
 
-[stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n, Fp_el_n);
+[stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp_el_n);
 
 % Test the algorithm
 stress_q = zeros(ndim*nstress, ndim);
@@ -49,7 +49,7 @@ save     q_Fp.log     Fp_q -ASCII
 % -------------------------------------------------------------------------------------------------
 %                                  Return mapping function
 % -------------------------------------------------------------------------------------------------
-function [stresses, isv, Fp_el] = element_stress_isv(coordsx, d, params, c_tau_n, Fp_n)
+function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
 
     % Helper function: 3x3 identity matrix
     eye_mat = eye(3);
