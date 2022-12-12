@@ -4,6 +4,26 @@
 
 clear all
 
+% plastic
+d = [   0	                  0	                     0                    ...
+       -0.00121108996046273   0.00470671669352617	 0                    ...
+       -0.00592063407691252	  0.00409562007109281	 0                    ...
+       -0.00470954411644980  -0.000611096622433368	 0                    ...
+        0                 	  0	                     0.000574665721779025 ...
+       -0.00121108996046273	  0.00470671669352617	 0.000574665721779095 ...
+       -0.00592063407691252	  0.00409562007109281	 0.000574665721779159 ...
+       -0.00470954411644980  -0.000611096622433368	 0.000574665721779107 ];
+
+% elastic
+%d = [   0	                  0	                     0 ...
+%       -0.000401233206816348  0.00157016736255855	 0 ...
+%       -0.00197171472851106	  0.00136893390900214	 0 ...
+%       -0.00157048152169471	 -0.000201233453556407	 0 ...
+%        0	                  0	                     0 ...
+%       -0.000401233206816348  0.00157016736255855	 0 ...
+%       -0.00197171472851106	  0.00136893390900214	 0 ...
+%       -0.00157048152169471  -0.000201233453556407	 0 ];
+
 coordsx = [ 0.0  0.0  0.0;
             1.0  0.0  0.0;
             1.0  1.0  0.0;
@@ -12,15 +32,6 @@ coordsx = [ 0.0  0.0  0.0;
             1.0  0.0  1.0;
             1.0  1.0  1.0;
             0.0  1.0  1.0 ];
-
-d = [ 0             0            0          ...
-     -4.0123e-04    1.5702e-03   0          ...
-     -1.9717e-03    1.3689e-03   0          ...
-     -1.5705e-03   -2.0123e-04   0          ...
-      0             0            1.9148e-04 ...
-     -4.0123e-04    1.5702e-03   1.9148e-04 ...
-     -1.9717e-03    1.3689e-03   1.9148e-04 ...
-     -1.5705e-03   -2.0123e-04   1.9148e-04 ];
 
 params = [ 1.5e+09 1.6e+09 1.633 0 1.633 0 306.19 8 2 2 3 ];
 
@@ -221,10 +232,49 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
     Fp_el = Fp;
 end
 
+
 function C = coaxial(A, b)
     [eig_vec, ~] = eig(A);
     C            = zeros(3, 3);
     for i=1:3
         C = C + b(i) * eig_vec(:, i) * eig_vec(:, i)';
     end
+end
+
+
+function dNdX = grad_basis_linear(xi)
+    % derivatives of shape functions with respect to xi
+    dN1_dxi = -0.125*(1-xi(2))*(1-xi(3));
+    dN2_dxi = -dN1_dxi;
+    dN3_dxi = 0.125*(1+xi(2))*(1-xi(3));
+    dN4_dxi = -dN3_dxi;
+    dN5_dxi = -0.125*(1-xi(2))*(1+xi(3));
+    dN6_dxi = -dN5_dxi;
+    dN7_dxi = 0.125*(1+xi(2))*(1+xi(3));
+    dN8_dxi = -dN7_dxi;
+
+    % derivatives of shape functions with respect to eta
+    dN1_deta = -0.125*(1-xi(1))*(1-xi(3));
+    dN2_deta = -0.125*(1+xi(1))*(1-xi(3));
+    dN3_deta = -dN2_deta;
+    dN4_deta = -dN1_deta;
+    dN5_deta = -0.125*(1-xi(1))*(1+xi(3));
+    dN6_deta = -0.125*(1+xi(1))*(1+xi(3));
+    dN7_deta = -dN6_deta;
+    dN8_deta = -dN5_deta;
+
+    % derivatives of shape functions with respect to zeta
+    dN1_dzeta = -0.125*(1-xi(1))*(1-xi(2));
+    dN2_dzeta = -0.125*(1+xi(1))*(1-xi(2));
+    dN3_dzeta = -0.125*(1+xi(1))*(1+xi(2));
+    dN4_dzeta = -0.125*(1-xi(1))*(1+xi(2));
+    dN5_dzeta = -dN1_dzeta;
+    dN6_dzeta = -dN2_dzeta;
+    dN7_dzeta = -dN3_dzeta;
+    dN8_dzeta = -dN4_dzeta;
+
+    % Populate dNdX
+    dNdX = [dN1_dxi dN2_dxi dN3_dxi dN4_dxi dN5_dxi dN6_dxi dN7_dxi dN8_dxi;
+            dN1_deta dN2_deta dN3_deta dN4_deta dN5_deta dN6_deta dN7_deta dN8_deta;
+            dN1_dzeta dN2_dzeta dN3_dzeta dN4_dzeta dN5_dzeta dN6_dzeta dN7_dzeta dN8_dzeta];
 end
