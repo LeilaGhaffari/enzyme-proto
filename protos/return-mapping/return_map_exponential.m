@@ -108,7 +108,7 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
 
     % find eigenvalues and eigenvectors of be_tr
     [V, D]      = eig(be_tr);
-    lambda_e_tr = sqrt(diag(D));
+    lambda_e_tr = sqrt(diag(D))
     Jdef_e_tr   = prod(lambda_e_tr);
 
     % calculate trial Kirchhoff stress
@@ -143,7 +143,7 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
         c_tau = c_tau_n;
         be    = be_tr;
     else % plastic
-        lambda_e = lambda_e_tr;
+        lambda_e = lambda_e_tr
         Jdef_e   = prod(lambda_e);
 
         % calculate Kirchhoff stress and deviatoric part
@@ -187,12 +187,14 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
             for i=1:3
                 lambda_e(i) = lambda_e_tr(i) * exp(-Dg_iter * dgdtau_princ_tr(i));
             end
+            lambda_e
             Jdef_e = prod(lambda_e);
 
             % calculate Kirchhoff stress and deviatoric part
             for i=1:3
                 tau_princ(i) = tau_princ_coef(Jdef_e, lambda_e(i));
             end
+            tau_princ
             p_tau        = sum(tau_princ) / 3;
             dev_tau      = tau_princ - p_tau;
             dev_tau_norm = norm(dev_tau);
@@ -201,10 +203,10 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
             c_tau = c_tau_n + Dg_iter * Hc * Apsi;
 
             % update fyield
-            dev_tau_norm
-            Aphi_mult_ctau = Aphi * c_tau
-            Bphi_mult_p_tau = Bphi * p_tau
-            fyield = dev_tau_norm - Aphi_mult_ctau + Bphi * p_tau
+            dev_tau_norm;
+            Aphi_mult_ctau = Aphi * c_tau;
+            Bphi_mult_p_tau = Bphi * p_tau;
+            fyield = dev_tau_norm - Aphi_mult_ctau + Bphi * p_tau;
 
 
             if k == iter_break_local

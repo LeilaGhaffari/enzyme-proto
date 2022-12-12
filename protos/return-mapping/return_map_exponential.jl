@@ -96,6 +96,8 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
     lambda_e_tr = sqrt.(D)
     Jdef_e_tr = prod(lambda_e_tr)
 
+    @show lambda_e_tr
+
     # calculate trial Kirchhoff stress
     tau_princ_tr = zeros(3)
     for i = 1:3
@@ -128,6 +130,7 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
     else # plastic
         lambda_e = lambda_e_tr
         Jdef_e = prod(lambda_e)
+        @show lambda_e
 
         # calculate Kirchhoff stress and deviatoric part
         tau_princ = zeros(3)
@@ -174,6 +177,8 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
             end
             Jdef_e = prod(lambda_e)
 
+            @show lambda_e
+
             # calculate Kirchhoff stress and deviatoric part
             for i = 1:3
                 tau_princ[i] = tau_princ_coef(Jdef_e, lambda_e[i])
@@ -182,15 +187,13 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
             dev_tau = tau_princ .- p_tau
             dev_tau_norm = norm(dev_tau)
 
+            @show tau_princ
+
             # update c_tau
             c_tau = c_tau_n + Dg_iter * Hc * Apsi
 
             # update fyield
             fyield = dev_tau_norm - (Aphi * c_tau + Bphi * p_tau)
-            @show fyield
-            @show dev_tau_norm
-            @show Aphi * c_tau
-            @show Bphi * p_tau
 
             if k == iter_break_local
                 println(" ")
