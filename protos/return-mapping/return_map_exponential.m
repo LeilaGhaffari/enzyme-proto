@@ -163,7 +163,7 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
         fyield           = f_tr;
         Dg_iter          = 0;
         while ( abs(fyield) > fyield_atol && abs(fyield/f_tr) > fyield_rtol )
-            k = k+1;
+            k = k+1
 
             % derivative of devtau wrt Dg
             dtau_princ_dDg = zeros(3, 1);
@@ -180,11 +180,8 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
             dfdDg = ddevtau_norm_dDg - Hc * Aphi * Apsi + Bphi * trace_dtaudDg / 3;
 
             % increment of Dg
-            del_Dg  = -fyield / dfdDg;
-            Dg_iter = Dg_iter + del_Dg;
-            if Dg_iter < 0
-                Dg_iter
-            end
+            del_Dg  = -fyield / dfdDg
+            Dg_iter = Dg_iter + del_Dg
 
             % update elastic stretches
             for i=1:3
@@ -204,7 +201,11 @@ function [stresses, isv, Fp_el] = return_map_exp(coordsx, d, params, c_tau_n, Fp
             c_tau = c_tau_n + Dg_iter * Hc * Apsi;
 
             % update fyield
-            fyield = dev_tau_norm - Aphi * c_tau + Bphi * p_tau;
+            dev_tau_norm
+            Aphi_mult_ctau = Aphi * c_tau
+            Bphi_mult_p_tau = Bphi * p_tau
+            fyield = dev_tau_norm - Aphi_mult_ctau + Bphi * p_tau
+
 
             if k == iter_break_local
                 k

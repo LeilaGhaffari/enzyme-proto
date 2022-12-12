@@ -1,18 +1,16 @@
 # Mock the exponential return mapping algorithm from CVEN7511
 using LinearAlgebra
-using Kronecker
 
 function coaxial(A, b)
     eig_vec = eigvecs(A)
     C = zeros(3, 3)
     for i = 1:3
-        C = C + b[i] * reshape(kron(eig_vec[:, i], eig_vec[:, i]), (3, 3))
+        C[:, :] = C[:, :] + b[i] * ((eig_vec[:, i] * eig_vec[:, i]'))
     end
     return C
 end
 
 function grad_basis_linear(xi)
-
     # derivatives of shape functions with respect to xi
     dN1_dxi = -0.125 * (1 - xi[2]) * (1 - xi[3])
     dN2_dxi = -dN1_dxi
@@ -81,7 +79,7 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
     # strain-displacement matrix
     Bu = zeros(9, 24)
     for k = 1:8
-        Bu[:, (k-1)*3+1:k*3] = kronecker(I(3), dN_dx[k, :])
+        Bu[:, (k-1)*3+1:k*3] = kron(I(3), dN_dx[k, :])
     end
 
     # total deformation tensors
@@ -90,10 +88,11 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
 
     # calculate trial elastic deformation gradient and left elastic Cauchy Green tensor
     Fe_tr = Fdef / Fp_n
-    be_tr = Fe_tr * transpose(Fe_tr)
+    be_tr = Fe_tr * Fe_tr'
 
     # find eigenvalues and eigenvectors of be_tr
     D = eigvals(be_tr)
+    # D = D[[1, 3, 2]]
     lambda_e_tr = sqrt.(D)
     Jdef_e_tr = prod(lambda_e_tr)
 
@@ -145,7 +144,9 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
         fyield = f_tr
         while (abs(fyield) > fyield_atol && abs(fyield / f_tr) > fyield_rtol)
             # update iterator
+            println(" ")
             k += 1
+            @show k
 
             # derivative of devtau wrt Dg
             dtau_princ_dDg = zeros(3)
@@ -164,9 +165,8 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
             # increment of Dg
             del_Dg = -fyield / dfdDg
             Dg_iter = Dg_iter + del_Dg
-            if Dg_iter < 0
-                println("k = ", k, " Delta_gamma = ", Dg_iter)
-            end
+            @show del_Dg
+            @show Dg_iter
 
             # update elastic stretches
             for i = 1:3
@@ -186,9 +186,14 @@ function return_map_exp(coordsx, d, params, c_tau_n, Fp_n)
             c_tau = c_tau_n + Dg_iter * Hc * Apsi
 
             # update fyield
-            fyield = dev_tau_norm - Aphi * c_tau + Bphi * p_tau
+            fyield = dev_tau_norm - (Aphi * c_tau + Bphi * p_tau)
+            @show fyield
+            @show dev_tau_norm
+            @show Aphi * c_tau
+            @show Bphi * p_tau
 
             if k == iter_break_local
+                println(" ")
                 println("Reached max number of iterations (", k, ")")
                 break
             end
