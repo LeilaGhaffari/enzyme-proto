@@ -1,4 +1,3 @@
-hello
 *.bc
 *.s
 *.ll
@@ -7,4 +6,5 @@ hello
 *.exe
 *.json
 *.log
+*.asv
 .ipynb_checkpoints
