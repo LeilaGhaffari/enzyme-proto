@@ -14,11 +14,11 @@ extern int enzyme_tape, enzyme_const, enzyme_dup, enzyme_nofree, enzyme_allocate
 
 void *__enzyme_function_like[2] = {(void *)RatelLog1pSeries, "log1p"};
 
-void grad_S(double *dS, double *dE, double *S, double *E, const double lambda, const double mu) {     
-  __enzyme_fwddiff((void *)SecondPiolaKirchhoffStress_NeoHookean_Analytical, 
-                    enzyme_const, lambda, 
-                    enzyme_const, mu, 
-                    E, dE, 
+void grad_S(double *dS, double *dE, double *S, double *E, const double lambda, const double mu) {
+  __enzyme_fwddiff((void *)SecondPiolaKirchhoffStress_NeoHookean_Analytical,
+                    enzyme_const, lambda,
+                    enzyme_const, mu,
+                    E, dE,
                     S, dS);
 };
 
@@ -40,7 +40,7 @@ int main() {
     {0.0591922,  0.123535,  0.166572},
     {0.1617210,  0.478828,  0.646217}
   };
-  
+
   // Compute the Deformation Gradient : F = I + grad_u
   const double F[3][3] = {
     {grad_u[0][0] + 1, grad_u[0][1],     grad_u[0][2]    },
@@ -63,7 +63,7 @@ int main() {
       delta_E_Voigt[m] += (grad_delta_u[n][ind_j[m]] * F[n][ind_k[m]] + F[n][ind_j[m]] * grad_delta_u[n][ind_k[m]]) / 2.;
     }
   }
-   
+
   // J-1
   const double Jm1 = RatelMatDetAM1(temp_grad_u);
 
@@ -88,8 +88,11 @@ int main() {
 
 /* Output:
 
+S_ad         =
+
+                -2.243659409307         -2.164756566213         -0.329653373905         -0.698950464066         1.116803026863          2.683783965185
+
 dS_ad         =
 
                 2.533391374087          2.921533741175          2.575081731992          1.872573515063          -1.796081282951         -2.446521245324
-
 */
