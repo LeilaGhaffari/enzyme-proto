@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 # Set project name
-set(project_name "HIGH_ORDER_INPUT_VECTOR_MANUAL")
+set(project_name "FIRST_DERIVATIVE_INPUT_VECTOR")
 project(${project_name})
 
 # Set path to header files directories

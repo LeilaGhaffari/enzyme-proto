@@ -1,6 +1,4 @@
-// Tested function: 2.*x*x*x
-// First derivative: 2.*3.*x*x
-// Second derivative: 2.*3.*2.*x
+// Refactored vector example (vector-input-scalar-output)
 
 #include <stdio.h>
 # include <stdlib.h>
@@ -10,59 +8,71 @@
 
 using namespace std;
 
-adouble my_func(adouble x[3]) {
+static int n = 3;
+static int m = 1;
+
+adouble func(adouble x[3]) {
   adouble u = x[0], v= x[1], w = x[2];
   return 5*u*u*v*w + 3*u*v*v*w + 6*w*w*v + 1.;
 }
 
-double my_func(double x[3]) {
+double func(double x[3]) {
   double u = x[0], v= x[1], w = x[2];
-  return 5*u*u*u*u + 3*v*v*v + 6*w*w + 1.;
+  return 5*u*u*v*w + 3*u*v*v*w + 6*w*w*v + 1.;
+}
+
+double *dfunc(double xp[3]) {
+  int tag = 1, keep = 1;
+  auto xa = new adouble[n];
+  auto ya = new adouble[m];
+  auto yp = new double[m];
+
+  trace_on(tag);
+  for (int i=0; i<n; i++) xa[i] <<= xp[i];
+  ya[0] = func(xa);
+  ya[0] >>= yp[0];
+  trace_off();
+
+  auto Y = new double[m];
+  auto X = new double[n];
+  auto dX = new double[n];
+  for (int i=0; i<n; i++) X[i] = 0.;
+
+  for (int i=0; i<n; i++) {
+    X[i] = 1.;
+    fos_forward(tag, m, n, keep, xp, X, yp, Y);
+    X[i] = 0.;
+    dX[i] = Y[0];
+  }
+  return dX;
 }
 
 int main () {
 
-  int m = 1, n = 3, d = 2, p =3, tag = 1; // not sure about tag
-
-  // Initialize passive variables
-  auto xp = new double[n];    // Independent vector
-  auto yp = new double[m];    // Dependent vector
+  // Define and initialize independent variable
+  auto xp = new double[n];
   xp[0] = 1., xp[1] = 2., xp[2] = 3.;
 
-  // Initialize active variables
-  auto xa = new adouble[n];
-  auto ya = new adouble[m];
+  // Function evaluation
+  auto f = func(xp);
 
-  trace_on(tag);
-  for (int i=0; i<n; i++) xa[i] <<= xp[i];
+  // First derivative
+  auto dX = dfunc(xp);
 
-  ya[0] = my_func(xa);
-  ya[0] >>= yp[0];
+  // Print
+  cout << "f = " << f << endl << endl;
+  cout << "dX =" << endl;
+  for (int i=0; i<n; i++) cout << dX[i] << endl;
+  cout << endl;
 
-  trace_off();
-
-  double ***X = myalloc3(n, p, d);
-  for (int i=0; i<n; i++)
-    for (int j=0; j<p; j++)
-      if (i == j)
-        X[i][j][0] = 1.;
-      else
-        X[i][j][0] = 0.;  // Last index [0], activate only the x1 direction
-
-  double ***Y;
-  Y = myalloc3(m, p, d);
-
-  hov_forward(tag, m, n, d, p, xp, X, yp, Y);
-
-  for (int i=0; i<m; i++)
-    for (int j=0; j<p; j++)
-      for (int k=0; k<d; k++)
-        cout << "Y[" << i << ", " << j << ", " << k << "] = " << Y[i][j][k] << endl;
-
-  //myfree1(yprim);
-  //myfree3(yDerivative);
-  //myfree1(x);
-  //myfree1(y);
-  myfree3(X);
-  myfree3(Y);
+  return 0;
 }
+
+/*
+f = 175
+
+dX =
+96
+105
+94
+*/
