@@ -17,7 +17,7 @@ adouble my_func(adouble x[3]) {
 
 double my_func(double x[3]) {
   double u = x[0], v= x[1], w = x[2];
-  return 5*u*u*u*u + 3*v*v*v + 6*w*w + 1.;
+  return 5*u*u*v*w + 3*u*v*v*w + 6*w*w*v + 1.;
 }
 
 int main () {
