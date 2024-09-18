@@ -9,3 +9,5 @@ hello
 *.log
 .ipynb_checkpoints
 build
+exec
+*.o
