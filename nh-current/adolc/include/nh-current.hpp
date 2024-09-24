@@ -174,23 +174,6 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
   return 0;
 }
 
-double StrainEnergy(double E_Voigt[6], const double lambda, const double mu) {
-  // Calculate 2*E
-  double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i] * 2;
-
-  // log(J)
-  double detCm1 = VoigtDetAM1(E2_Voigt);
-
-  //double J      = sqrt(detCm1 + 1);
-  double logJ   = Log1pSeries(detCm1) / 2.;
-
-  // trace(E)
-  double traceE = VoigtTrace(E_Voigt);
-
-  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
-};
-
 double *tau_from_dPsi(double dPsi_sym[6], double e_p[6]) {
 
   auto tau_sym = new double[n];

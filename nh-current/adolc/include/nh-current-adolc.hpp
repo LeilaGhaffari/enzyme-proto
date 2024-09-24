@@ -1,3 +1,14 @@
+adouble MatDetAM1Symmetric(adouble A_sym[6]) {
+  return A_sym[0] * (A_sym[1] * A_sym[2] - A_sym[3] * A_sym[3]) +
+         A_sym[5] * (A_sym[3] * A_sym[4] - A_sym[5] * A_sym[2]) +
+         A_sym[4] * (A_sym[5] * A_sym[3] - A_sym[4] * A_sym[1]) +
+         A_sym[0] + A_sym[1] + A_sym[2] +
+         A_sym[0] * A_sym[1] + A_sym[0] * A_sym[2] + A_sym[1] * A_sym[2] -
+         A_sym[5] * A_sym[5] - A_sym[4] * A_sym[4] - A_sym[3] * A_sym[3];
+};
+
+adouble MatTraceSymmetric(adouble A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
+
 adouble VoigtDetAM1(const adouble V[6]) {
     return V[0] * (V[1] * V[2] - V[3] * V[3]) +
            V[5] * (V[3] * V[4] - V[5] * V[2]) +
@@ -21,22 +32,20 @@ adouble Log1pSeries(adouble x) {
 
 adouble VoigtTrace(adouble V[6]) { return V[0] + V[1] + V[2]; }
 
-adouble StrainEnergy(adouble E_Voigt[6], const double lambda, const double mu) {
-  // Calculate 2*E
-  adouble E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i] * 2;
+adouble StrainEnergy(adouble e_sym[6], const double lambda, const double mu) {
+  adouble e2_sym[6];
 
-  // log(J)
-  adouble detCm1 = VoigtDetAM1(E2_Voigt);
+  // J and log(J)
+  for (int i = 0; i < 6; i++) e2_sym[i] = 2 * e_sym[i];
+  adouble detbm1 = MatDetAM1Symmetric(e2_sym);
+  adouble J      = sqrt(detbm1 + 1);
+  adouble logJ   = Log1pSeries(detbm1) / 2.;
 
-  //double J      = sqrt(detCm1 + 1);
-  adouble logJ   = Log1pSeries(detCm1) / 2.;
+  // trace(e)
+  adouble trace_e = MatTraceSymmetric(e_sym);
 
-  // trace(E)
-  adouble traceE = VoigtTrace(E_Voigt);
-
-  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
-};
+  return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + trace_e);
+}
 
 double *Kirchhofftau_sym_NeoHookean_AD_ADOLC(const double lambda, const double mu, double e_p[6]) {
     int tag = 1;
