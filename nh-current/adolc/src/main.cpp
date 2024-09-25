@@ -120,11 +120,6 @@ int main() {
   GreenEulerStrain_fwd(grad_du, b, de_sym);
   SymmetricMatUnpack(de_sym, de);
 
-  // Compute d2Psi_fwd
-  double d2Psi_fwd_sym[6] = {0.}, d2Psi_fwd[3][3] = {{0.}};
-  for (int i=0; i<n; i++) for (int j=0; j<n; j++) d2Psi_fwd_sym[i] += d2Psi[i][j] * de_sym[j];
-  SymmetricMatUnpack(d2Psi_fwd_sym, d2Psi_fwd);
-
   // Compute delta_tau
   // tau = (dPsi / de) b => dtau = d(dPsi * b) = d2Psi * b + 2 dPsi
   double delta_tau[3][3] = {{0.}}, delta_tau_sym[6] = {0.};
