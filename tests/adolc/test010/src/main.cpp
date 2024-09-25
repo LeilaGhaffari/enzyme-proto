@@ -93,11 +93,11 @@ int main() {
     }
     temp += i + 2;
   }
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) dS_tensor[i][j] /= 2.;
 
   // Compute dS
   for (int i=0; i<n; i++) {
     for (int j=0; j<n; j++) dS[i] += dS_tensor[i][j] * delta_E_Voigt[j];
-    if (i>2) dS[i] /= 2.;
   }
 
   // ------------------------------------------------------------------------

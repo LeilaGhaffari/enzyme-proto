@@ -54,9 +54,6 @@ int main() {
   Kirchhofftau_sym_NeoHookean_AD(lambda, mu, e_sym, tau_sym);
   SymmetricMatUnpack(tau_sym, tau);
 
-
-
-
   // Compute grad_du = ddu/dX * dX/dx
   // X is ref coordinate [-1,1]^3; x is physical coordinate in current configuration
   double grad_du[3][3];
