@@ -68,28 +68,27 @@ int main() {
   auto tau_fwd = Kirchhofftau_sym_NeoHookean_AD_ADOLC(lambda, mu, e_p);
 
   // High order tensor
-  int temp = 1;
-  double psi;
-  double dPsi_sym[6] = {0.};
-  double dtau[6][6] = {{0.}};
-  double d2Psi[6][6] = {{0.}};
-  double dtau_sym[6] = {0.};
-
   // Tensor-AD evaluation
   auto tensor = dtau_ADOLC(e_p, lambda, mu);
 
   // Strain energy
-  psi = tensor[0];
+  auto psi = tensor[0];
 
-  // Populate stress (1st derivative)
+  // Populate dPsi/de
+  int temp = 1;
+  double dPsi_sym[6] = {0.};
   for (int i=0; i<n; i++) {
     dPsi_sym[i] = tensor[temp];
     if (i>2) dPsi_sym[i] /= 2.;
     temp += i + 2;
   }
+
+  // Compute tau = dPsi/de * (2e + I)
   auto tau = tau_from_dPsi(dPsi_sym, e_p);
 
+  // Populate d2Psi/de2
   temp = 1.;
+  double d2Psi[6][6] = {{0.}};
   for (int i=0; i< n; i++) {
     for (int j=0; j<i+1; j++) {
       d2Psi[i][j] = tensor[temp+j+1];
@@ -97,20 +96,14 @@ int main() {
     }
     temp += i + 2;
   }
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) d2Psi[i][j] /= 2.;
+
 
   // b = 2 e + I
   double b_sym[6], dPsi[3][3], b[3][3];
   for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_p[j] + (j < 3);
   SymmetricMatUnpack(b_sym, b);
-
-  // tau = (dPsi / de) b => dtau = d(dPsi * b) = d2Psi * b + 2 dPsi
   SymmetricMatUnpack(dPsi_sym, dPsi);
-  for (int i=0; i<n; i++) {
-    for (int j=0; j<n; j++) {
-      for (int k=0; k<n; k++) dtau[i][j] += d2Psi[i][k] * b[k][j];
-      dtau[i][j] += 2. * dPsi[i][j];
-    }
-  }
 
   // Compute grad_du = ddu/dX * dX/dx
   // X is ref coordinate [-1,1]^3; x is physical coordinate in current configuration
@@ -126,11 +119,23 @@ int main() {
   double de_sym[6];
   GreenEulerStrain_fwd(grad_du, b, de_sym);
 
+  // Compute d2Psi_fwd
+  double d2Psi_fwd_sym[6] = {0.}, d2Psi_fwd[3][3] = {{0.}};
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) d2Psi_fwd_sym[i] += d2Psi[i][j] * de_sym[j];
+  SymmetricMatUnpack(d2Psi_fwd_sym, d2Psi_fwd);
+
   // Compute dtau_sym
-  for (int i=0; i<n; i++) {
-    for (int j=0; j<n; j++) dtau_sym[i] += dtau[i][j] * de_sym[j];
-    if (i>2) dtau_sym[i] /= 2.;
+  // tau = (dPsi / de) b => dtau = d(dPsi * b) = d2Psi * b + 2 dPsi
+  double dtau[3][3] = {{0.}}, dtau_sym[6] = {0.};
+  for (int i=0; i<3; i++) {
+    for (int j=0; j<3; j++){
+      for (int k=0; k<3; k++) {
+        dtau[i][j] += d2Psi_fwd[i][k] * b[k][j];
+      }
+      dtau[i][j] += 2. * dPsi[i][j]; // Do I need to multiply by de?
+    }
   }
+  SymmetricMatPack(dtau, dtau_sym);
 
   // ------------------------------------------------------------------------
   // Print
@@ -182,10 +187,10 @@ int main() {
 
  dtau =
 
-        9.422074132912
-        10.122307504175
-        8.750865517728
-        0.693697912910
-        -2.514242853021
-        -0.026900520520
+        2.662047097805
+        2.515592373839
+        1.869278025008
+        0.750807688616
+        0.714042268606
+        0.712369842831
 */
