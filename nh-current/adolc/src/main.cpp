@@ -116,23 +116,28 @@ int main() {
   MatMatMult(1.0, ddudX, dXdx, grad_du);
 
   // Compute de = db / 2 = (grad_du b + b (grad_du)^T) / 2
-  double de_sym[6];
+  double de_sym[6], de[3][3] = {{0.}};
   GreenEulerStrain_fwd(grad_du, b, de_sym);
+  SymmetricMatUnpack(de_sym, de);
 
   // Compute d2Psi_fwd
   double d2Psi_fwd_sym[6] = {0.}, d2Psi_fwd[3][3] = {{0.}};
   for (int i=0; i<n; i++) for (int j=0; j<n; j++) d2Psi_fwd_sym[i] += d2Psi[i][j] * de_sym[j];
   SymmetricMatUnpack(d2Psi_fwd_sym, d2Psi_fwd);
 
-  // Compute dtau_sym
+  // Compute delta_tau
   // tau = (dPsi / de) b => dtau = d(dPsi * b) = d2Psi * b + 2 dPsi
+  double delta_tau[3][3] = {{0.}}, delta_tau_sym[6] = {0.};
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) delta_tau_sym[i] += d2Psi[i][j] * b_sym[j] + 2. * dPsi_sym[i];
+  SymmetricMatUnpack(delta_tau_sym, delta_tau);
+
+  // Compute dtau = delta_tau : de (I am not contracting though!)
   double dtau[3][3] = {{0.}}, dtau_sym[6] = {0.};
   for (int i=0; i<3; i++) {
     for (int j=0; j<3; j++){
       for (int k=0; k<3; k++) {
-        dtau[i][j] += d2Psi_fwd[i][k] * b[k][j];
+        dtau[i][j] += delta_tau[i][k] * de[k][j];
       }
-      dtau[i][j] += 2. * dPsi[i][j]; // Do I need to multiply by de?
     }
   }
   SymmetricMatPack(dtau, dtau_sym);
