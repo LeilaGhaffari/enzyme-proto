@@ -1,4 +1,15 @@
-adouble RatelVoigtDetAM1(const adouble V[6]) {
+adouble MatDetAM1Symmetric(adouble A_sym[6]) {
+  return A_sym[0] * (A_sym[1] * A_sym[2] - A_sym[3] * A_sym[3]) +
+         A_sym[5] * (A_sym[3] * A_sym[4] - A_sym[5] * A_sym[2]) +
+         A_sym[4] * (A_sym[5] * A_sym[3] - A_sym[4] * A_sym[1]) +
+         A_sym[0] + A_sym[1] + A_sym[2] +
+         A_sym[0] * A_sym[1] + A_sym[0] * A_sym[2] + A_sym[1] * A_sym[2] -
+         A_sym[5] * A_sym[5] - A_sym[4] * A_sym[4] - A_sym[3] * A_sym[3];
+};
+
+adouble MatTraceSymmetric(adouble A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
+
+adouble VoigtDetAM1(const adouble V[6]) {
     return V[0] * (V[1] * V[2] - V[3] * V[3]) +
            V[5] * (V[3] * V[4] - V[5] * V[2]) +
            V[4] * (V[5] * V[3] - V[4] * V[1]) +
@@ -7,7 +18,7 @@ adouble RatelVoigtDetAM1(const adouble V[6]) {
            V[5] * V[5] - V[4] * V[4] - V[3] * V[3];
 };
 
-adouble RatelLog1pSeries(adouble x) {
+adouble Log1pSeries(adouble x) {
     adouble sum = 0;
     adouble y = x / (2. + x);
     adouble y2 = y*y;
@@ -19,24 +30,22 @@ adouble RatelLog1pSeries(adouble x) {
     return 2 * sum;
 };
 
-adouble RatelVoigtTrace(adouble V[6]) { return V[0] + V[1] + V[2]; }
+adouble VoigtTrace(adouble V[6]) { return V[0] + V[1] + V[2]; }
 
 adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
-  // Calculate 2*E
   adouble E2_sym[6];
-  for(int i = 0; i<6; i++) E2_sym[i] = E_sym[i] * 2;
 
-  // log(J)
-  adouble detCm1 = RatelVoigtDetAM1(E2_sym);
-
-  //double J      = sqrt(detCm1 + 1);
-  adouble logJ   = RatelLog1pSeries(detCm1) / 2.;
+  // J and log(J)
+  for (int i = 0; i < 6; i++) E2_sym[i] = 2 * E_sym[i];
+  adouble detCm1 = MatDetAM1Symmetric(E2_sym);
+  adouble J      = sqrt(detCm1 + 1);
+  adouble logJ   = Log1pSeries(detCm1) / 2.;
 
   // trace(E)
-  adouble traceE = RatelVoigtTrace(E_sym);
+  adouble traceE = MatTraceSymmetric(E_sym);
 
-  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
-};
+  return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + traceE);
+}
 
 void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const double mu) {
   // Active section for AD

@@ -57,10 +57,6 @@ int main() {
   double E_sym[n];
   GreenLagrangeStrain(temp_grad_u, E_sym);
 
-  // Second Piola-Kirchhoff: S
-  double S_an[n];
-  SecondPiolaKirchhoffStress_NeoHookean_Analytical(E_sym, S_an, lambda, mu); // Analytical
-
   // ------------------------------------------------------------------------
   // Automatic Differentiation
   // ------------------------------------------------------------------------
@@ -86,11 +82,7 @@ int main() {
   cout.precision(12);
   cout.setf(ios::fixed);
   cout << "\n Strain energy = " << StrainEnergy(E_sym, lambda, mu) << endl;
-  cout << "\n Stress =" << endl;
-  cout << "\n   Analytical:" << endl << endl;
-  for (int i=0; i<n; i++) cout << "\t" << S_an[i] << endl;
-  cout << endl;
-  cout << "\n   ADOL-C gradient:" << endl << endl;
+  cout << "\n  S (ADOL-C gradient):" << endl << endl;
   for (int i=0; i<n; i++) cout << "\t" << S_sym[i] << endl;
   cout << endl;
   cout << "\n dS (ADOL-C hessian) =" << endl << endl;
@@ -101,36 +93,24 @@ int main() {
 }
 
 /*
- Strain energy = 0.922656758772
+  Strain energy = 0.922656758772
 
- Stress =
+  S (ADOL-C gradient):
 
-   Analytical:
-
-        -2.243659409307
-        -2.164756566213
-        -0.329653373905
-        -0.698950464066
-        1.116803026863
-        2.683783965185
-
-
-   ADOL-C gradient:
-
-        -2.243659385920
-        -2.164756543395
-        -0.329653364318
-        -0.698950459026
-        1.116803018811
-        2.683783945834
+        -2.138040990828
+        -2.061707342723
+        -0.286357864495
+        -0.676191587965
+        1.080438244201
+        2.596395931432
 
 
  dS (ADOL-C hessian) =
 
-        2.533390355923
-        2.921532744535
-        2.575081303544
-        1.872573286101
-        -1.796080925733
-        -2.446520400374
+        1.804379625553
+        2.195610276263
+        2.226208937974
+        1.672286083272
+        -1.514998884900
+        -1.831931547889
 */
