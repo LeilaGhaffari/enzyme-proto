@@ -47,66 +47,48 @@ adouble StrainEnergy(adouble e_sym[6], const double lambda, const double mu) {
   return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + trace_e);
 }
 
-double *Kirchhofftau_sym_NeoHookean_AD_ADOLC(const double lambda, const double mu, double e_p[6]) {
-    int tag = 1;
-    auto e_a = new adouble[n];
-    auto F_a = new adouble[m];
-    auto F_p = new double[m];
-    double **e_sym = myalloc(n, p);
-    double **F = myalloc(m, p);
-    double gradPsi_sym[n];
+void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const double mu) {
+  // Active section for AD
+  int tag = 1;
+  auto Ea = new adouble[n];
+  auto Fa = new adouble[m];
+  auto Fp = new double[m];
+  trace_on(tag); // Start tracing floating point operations
+  for (int i=0; i<n; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
+  Fa[0] = StrainEnergy(Ea, lambda, mu); // Evaluate the body of the differentiated code
+  Fa[0] >>= Fp[0]; // Assign dXpendent variables
+  trace_off();    // End of the active section
 
-    // Start tracing floating point operations
-    trace_on(tag);
-    // Assign independent variables
-    for (int i=0; i<n; i++) e_a[i] <<= e_p[i];
-    // Evaluate the body of the differentiated code
-    F_a[0] = StrainEnergy(e_a, lambda, mu);
-    // Assign dependent variables
-    F_a[0] >>= F_p[0];
-    trace_off();    // End of the active section
-
-    // Identity matrix
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < p; j++) if (i == j) e_sym[i][j] = 1.;
-        else  e_sym[i][j] = 0.00;
-    }
-
-    // dPsi / de
-    fov_forward(tag, m, n, p, e_p, e_sym, F_p, F);
-    for (int i=0; i<n; i++) {
-      gradPsi_sym[i] = F[0][i];
-      if (i>2) gradPsi_sym[i] /= 2.;
-    }
-
-    return tau_from_gradPsi(gradPsi_sym, e_p);
+  // Compute the gradient
+  gradient(tag, n, Xp, grad);
+  for (int i=0; i<n; i++) if (i>2) grad[i] /= 2.;
 };
 
-double *dtau_ADOLC(double e_p[6], const double lambda, const double mu) {
+void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, const double mu) {
+    // Active section for AD
     int tag = 1;
-    auto F_p = new double[m];
-    adouble* E = new adouble[n];
-    adouble* F = new adouble[m];
-    auto dS = new double[n];
-    double** I = new double*[n];
-    double** dtensor; // size = m x dim
-
-    for (int i=0; i<n; i++) { // Identity matrix
-        I[i] = new double[p];
-        for (int j=0; j<p; j++) I[i][j] = (i == j) ? 1.0 : 0.0;
-    }
-
+    auto Fp = new double[m];
+    adouble* Xa = new adouble[n];
+    adouble* Fa = new adouble[m];
     trace_on(tag);
-    for (int i=0; i<n; i++) E[i] <<= e_p[i];
-    F[0] = StrainEnergy(E, lambda, mu);
-    F[0] >>= F_p[0];
+    for (int i=0; i<n; i++) Xa[i] <<= Xp[i];
+    Fa[0] = StrainEnergy(Xa, lambda, mu);
+    Fa[0] >>= Fp[0];
     trace_off();
 
-    int dim = binomi(p + d, d);
-    dtensor = myalloc2(m, dim);
-    tensor_eval(tag, m, n, d, p, e_p, dtensor, I);
+    // Allocate data array for the lower half of the hessian matrix
+    double **H = (double **)malloc(n * sizeof(double *));
+    for(int i=0; i<n; i++) H[i] = (double *)malloc((i+1) * sizeof(double));
 
-    for (int i=0; i<dim; i++) dS[i] = dtensor[0][i];
+    // Compute the hessian matrix
+    hessian(tag, n, Xp, H);
 
-    return dS;
+    // Populate hess
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<i+1; j++) {
+        hess[i][j] = H[i][j];
+        if (i != j) hess[j][i] = hess[i][j];
+      }
+    }
+    for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) hess[i][j] /= 2.;
 };

@@ -174,16 +174,28 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
   return 0;
 }
 
-double *tau_from_gradPsi(double gradPsi_sym[6], double e_p[6]) {
+double MatDetAM1Symmetric(double A_sym[6]) {
+  return A_sym[0] * (A_sym[1] * A_sym[2] - A_sym[3] * A_sym[3]) +
+         A_sym[5] * (A_sym[3] * A_sym[4] - A_sym[5] * A_sym[2]) +
+         A_sym[4] * (A_sym[5] * A_sym[3] - A_sym[4] * A_sym[1]) +
+         A_sym[0] + A_sym[1] + A_sym[2] +
+         A_sym[0] * A_sym[1] + A_sym[0] * A_sym[2] + A_sym[1] * A_sym[2] -
+         A_sym[5] * A_sym[5] - A_sym[4] * A_sym[4] - A_sym[3] * A_sym[3];
+};
 
-  auto tau_sym = new double[n];
-  double b_sym[6], gradPsi[3][3], b[3][3], tau[3][3];
-  // b = 2 e + I
-  for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_p[j] + (j < 3);
-  // tau = (dPsi / de) b
-  SymmetricMatUnpack(gradPsi_sym, gradPsi);
-  SymmetricMatUnpack(b_sym, b);
-  MatMatMult(1., gradPsi, b, tau);
-  SymmetricMatPack(tau, tau_sym);
-  return tau_sym;
+double MatTraceSymmetric(double A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
+
+double StrainEnergy(double e_sym[6], const double lambda, const double mu) {
+  double e2_sym[6];
+
+  // J and log(J)
+  for (int i = 0; i < 6; i++) e2_sym[i] = 2 * e_sym[i];
+  double detbm1 = MatDetAM1Symmetric(e2_sym);
+  double J      = sqrt(detbm1 + 1);
+  double logJ   = Log1pSeries(detbm1) / 2.;
+
+  // trace(e)
+  double trace_e = MatTraceSymmetric(e_sym);
+
+  return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + trace_e);
 }

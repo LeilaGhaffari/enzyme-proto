@@ -7,7 +7,7 @@
 #include <adolc/adolc.h>
 
 using namespace std;
-static int m = 1, n = 6, d = 2, p = 6;
+static int m = 1, n = 6;
 
 #include "../include/nh-current.hpp"
 #include "../include/nh-current-adolc.hpp"
@@ -16,7 +16,6 @@ static int m = 1, n = 6, d = 2, p = 6;
 
 int main() {
   const double mu = 1., lambda = 1.;
-  int size = binomi(p + d, d);
 
   double dXdx_initial[3][3] = {
     {0.0702417, 0.4799115, 0.3991242},
@@ -47,9 +46,7 @@ int main() {
 
   MatInverse(F, detF, F_inv);
 
-  // x is current config coordinate system
-  // dXdx = dX/dx = dX/dx_initial * F^{-1}
-  // Note that F^{-1} = dx_initial/dx
+  // Compute dXdx = dX/dx = dX/dx_initial * F^{-1}
   double dXdx[3][3];
   MatMatMult(1.0, dXdx_initial, F_inv, dXdx);
 
@@ -64,48 +61,22 @@ int main() {
   auto e_p = new double[n];
   for (int i=0; i<n; i++) e_p[i] = e_sym[i];
 
-  // First derivative (forward vector mode)
-  auto tau_fwd = Kirchhofftau_sym_NeoHookean_AD_ADOLC(lambda, mu, e_p);
-
-  // High order tensor
-  // Tensor-AD evaluation
-  auto tensor = dtau_ADOLC(e_p, lambda, mu);
-
-  // Strain energy
-  auto psi = tensor[0];
-
-  // Populate gradPsi = dPsi/de
-  int temp = 1;
+  // Compute gradPsi = dPsi/de
   double gradPsi_sym[6] = {0.}, gradPsi[3][3];
-  for (int i=0; i<n; i++) {
-    gradPsi_sym[i] = tensor[temp];
-    if (i>2) gradPsi_sym[i] /= 2.;
-    temp += i + 2;
-  }
+  ComputeGradPsi(gradPsi_sym, e_p, lambda, mu);
   SymmetricMatUnpack(gradPsi_sym, gradPsi);
 
-  // Compute tau = gradPsi * (2e + I)
-  auto tau = tau_from_gradPsi(gradPsi_sym, e_p);
-
-  // Populate HessPsi = d2Psi/de2
-  temp = 1.;
-  double HessPsi[6][6] = {{0.}};
-  for (int i=0; i< n; i++) {
-    for (int j=0; j<i+1; j++) {
-      HessPsi[i][j] = tensor[temp+j+1];
-      if (i != j) HessPsi[j][i] = HessPsi[i][j];
-    }
-    temp += i + 2;
-  }
-  for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) HessPsi[i][j] /= 2.;
-
-  // b = 2 e + I
+  // Compute b = 2 e + I
   double b_sym[6], b[3][3];
   for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_p[j] + (j < 3);
   SymmetricMatUnpack(b_sym, b);
 
+  // Compute tau = dPsi/de * b
+  double tau_sym[6], tau[3][3];
+  MatMatMult(1.0, gradPsi, b, tau);
+  SymmetricMatPack(tau, tau_sym);
+
   // Compute grad_du = ddu/dX * dX/dx
-  // X is ref coordinate [-1,1]^3; x is physical coordinate in current configuration
   double grad_du[3][3];
   double ddudX[3][3] = {
       {0.23617975,  0.60250516,  0.1717169},
@@ -118,20 +89,24 @@ int main() {
   double de_sym[6];
   GreenEulerStrain_fwd(grad_du, b, de_sym);
 
-  // Compute d_gradPsi = HessPsi : de
-  double d_gradPsi[3][3], d_gradPsi_sym[6] = {0.};
-  for (int i=0; i<n; i++) for (int j=0; j<n; j++) d_gradPsi_sym[i] += HessPsi[i][j] * de_sym[j];
-  SymmetricMatUnpack(d_gradPsi_sym, d_gradPsi);
+  // Compute the hessian of Psi (d2Psi/de2)
+  double hessPsi[6][6] = {{0.}};
+  ComputeHessianPsi(hessPsi, e_p, lambda, mu);
+
+  // Compute dGradPsi = hessPsi : de
+  double dGradPsi[3][3], dGradPsi_sym[6] = {0.};
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) dGradPsi_sym[i] += hessPsi[i][j] * de_sym[j];
+  SymmetricMatUnpack(dGradPsi_sym, dGradPsi);
 
   // Compute dPsi = gradPsi : de
   double dPsi = 0.;
   for (int i=0; i<n; i++) dPsi += gradPsi_sym[i] * de_sym[i];
 
-  // Compute Jac_tau
-  // tau = gradPsi * b => Jac_tau = dtau/de = d(gradPsi * b)/de = HessPsi * b + 2 gradPsi * I
-  // dtau = Jac_tau : de = b * (HessPsi : de) + 2 (gradPsi : de) * I = b * d_gradPsi + 2 dPsi * I
+  // Compute dtau
+  // tau = gradPsi * b => Jac_tau = dtau/de = d(gradPsi * b)/de = hessPsi * b + 2 gradPsi * I
+  // dtau = Jac_tau : de = b * (hessPsi : de) + 2 (gradPsi : de) * I = b * dGradPsi + 2 dPsi * I
   double dtau[3][3], dtau_sym[6];
-  MatMatMult(1.0, b, d_gradPsi, dtau);
+  MatMatMult(1.0, b, dGradPsi, dtau);
   for (int i=0; i<3; i++) dtau[i][i] += 2. * dPsi;
   SymmetricMatPack(dtau, dtau_sym);
 
@@ -140,14 +115,9 @@ int main() {
   // ------------------------------------------------------------------------
   cout.precision(12);
   cout.setf(ios::fixed);
-  cout << "\n size = " << size << endl;
-  cout << "\n Strain energy = " << psi << endl;
+  cout << "\n Strain energy = " << StrainEnergy(e_sym, lambda, mu) << endl;
   cout << "\n tau =" << endl;
-  cout << "\n   From Forward Vector Mode:" << endl << endl;
-  for (int i=0; i<n; i++) cout << "\t" << tau_fwd[i] << endl;
-  cout << endl;
-  cout << "\n   From Higher Order Tensor:" << endl << endl;
-  for (int i=0; i<n; i++) cout << "\t" << tau[i] << endl;
+  for (int i=0; i<n; i++) cout << "\t" << tau_sym[i] << endl;
   cout << endl;
   cout << "\n dtau =" << endl << endl;
   for (int i=0; i<n; i++) cout << "\t" << dtau_sym[i] << endl;
@@ -157,24 +127,9 @@ int main() {
 }
 
 /*
- size = 28
-
  Strain energy = 0.338798323727
 
- Stress =
-
-   Forward Vector Mode:
-
-        0.968543642678
-        0.580221110582
-        1.092965373300
-        0.250640282229
-        0.731414543779
-        0.252397811536
-
-
-   Higher Order Tensor:
-
+ tau =
         0.968543642678
         0.580221110582
         1.092965373300
