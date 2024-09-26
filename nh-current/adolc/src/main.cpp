@@ -74,36 +74,35 @@ int main() {
   // Strain energy
   auto psi = tensor[0];
 
-  // Populate dPsi/de
+  // Populate gradPsi = dPsi/de
   int temp = 1;
-  double dPsi_sym[6] = {0.};
+  double gradPsi_sym[6] = {0.}, gradPsi[3][3];
   for (int i=0; i<n; i++) {
-    dPsi_sym[i] = tensor[temp];
-    if (i>2) dPsi_sym[i] /= 2.;
+    gradPsi_sym[i] = tensor[temp];
+    if (i>2) gradPsi_sym[i] /= 2.;
     temp += i + 2;
   }
+  SymmetricMatUnpack(gradPsi_sym, gradPsi);
 
-  // Compute tau = dPsi/de * (2e + I)
-  auto tau = tau_from_dPsi(dPsi_sym, e_p);
+  // Compute tau = gradPsi * (2e + I)
+  auto tau = tau_from_gradPsi(gradPsi_sym, e_p);
 
-  // Populate d2Psi/de2
+  // Populate HessPsi = d2Psi/de2
   temp = 1.;
-  double d2Psi[6][6] = {{0.}};
+  double HessPsi[6][6] = {{0.}};
   for (int i=0; i< n; i++) {
     for (int j=0; j<i+1; j++) {
-      d2Psi[i][j] = tensor[temp+j+1];
-      if (i != j) d2Psi[j][i] = d2Psi[i][j];
+      HessPsi[i][j] = tensor[temp+j+1];
+      if (i != j) HessPsi[j][i] = HessPsi[i][j];
     }
     temp += i + 2;
   }
-  for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) d2Psi[i][j] /= 2.;
-
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) HessPsi[i][j] /= 2.;
 
   // b = 2 e + I
-  double b_sym[6], dPsi[3][3], b[3][3];
+  double b_sym[6], b[3][3];
   for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_p[j] + (j < 3);
   SymmetricMatUnpack(b_sym, b);
-  SymmetricMatUnpack(dPsi_sym, dPsi);
 
   // Compute grad_du = ddu/dX * dX/dx
   // X is ref coordinate [-1,1]^3; x is physical coordinate in current configuration
@@ -116,25 +115,24 @@ int main() {
   MatMatMult(1.0, ddudX, dXdx, grad_du);
 
   // Compute de = db / 2 = (grad_du b + b (grad_du)^T) / 2
-  double de_sym[6], de[3][3] = {{0.}};
+  double de_sym[6];
   GreenEulerStrain_fwd(grad_du, b, de_sym);
-  SymmetricMatUnpack(de_sym, de);
 
-  // Compute delta_tau
-  // tau = (dPsi / de) b => dtau = d(dPsi * b) = d2Psi * b + 2 dPsi
-  double delta_tau[3][3] = {{0.}}, delta_tau_sym[6] = {0.};
-  for (int i=0; i<n; i++) for (int j=0; j<n; j++) delta_tau_sym[i] += d2Psi[i][j] * b_sym[j] + 2. * dPsi_sym[i];
-  SymmetricMatUnpack(delta_tau_sym, delta_tau);
+  // Compute d_gradPsi = HessPsi : de
+  double d_gradPsi[3][3], d_gradPsi_sym[6] = {0.};
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) d_gradPsi_sym[i] += HessPsi[i][j] * de_sym[j];
+  SymmetricMatUnpack(d_gradPsi_sym, d_gradPsi);
 
-  // Compute dtau = delta_tau : de (I am not contracting though!)
-  double dtau[3][3] = {{0.}}, dtau_sym[6] = {0.};
-  for (int i=0; i<3; i++) {
-    for (int j=0; j<3; j++){
-      for (int k=0; k<3; k++) {
-        dtau[i][j] += delta_tau[i][k] * de[k][j];
-      }
-    }
-  }
+  // Compute dPsi = gradPsi : de
+  double dPsi = 0.;
+  for (int i=0; i<n; i++) dPsi += gradPsi_sym[i] * de_sym[i];
+
+  // Compute Jac_tau
+  // tau = gradPsi * b => Jac_tau = dtau/de = d(gradPsi * b)/de = HessPsi * b + 2 gradPsi * I
+  // dtau = Jac_tau : de = b * (HessPsi : de) + 2 (gradPsi : de) * I = b * d_gradPsi + 2 dPsi * I
+  double dtau[3][3], dtau_sym[6];
+  MatMatMult(1.0, b, d_gradPsi, dtau);
+  for (int i=0; i<3; i++) dtau[i][i] += 2. * dPsi;
   SymmetricMatPack(dtau, dtau_sym);
 
   // ------------------------------------------------------------------------
@@ -144,11 +142,11 @@ int main() {
   cout.setf(ios::fixed);
   cout << "\n size = " << size << endl;
   cout << "\n Strain energy = " << psi << endl;
-  cout << "\n Stress =" << endl;
-  cout << "\n   Forward Vector Mode:" << endl << endl;
+  cout << "\n tau =" << endl;
+  cout << "\n   From Forward Vector Mode:" << endl << endl;
   for (int i=0; i<n; i++) cout << "\t" << tau_fwd[i] << endl;
   cout << endl;
-  cout << "\n   Higher Order Tensor:" << endl << endl;
+  cout << "\n   From Higher Order Tensor:" << endl << endl;
   for (int i=0; i<n; i++) cout << "\t" << tau[i] << endl;
   cout << endl;
   cout << "\n dtau =" << endl << endl;

@@ -174,16 +174,16 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
   return 0;
 }
 
-double *tau_from_dPsi(double dPsi_sym[6], double e_p[6]) {
+double *tau_from_gradPsi(double gradPsi_sym[6], double e_p[6]) {
 
   auto tau_sym = new double[n];
-  double b_sym[6], dPsi[3][3], b[3][3], tau[3][3];
+  double b_sym[6], gradPsi[3][3], b[3][3], tau[3][3];
   // b = 2 e + I
   for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_p[j] + (j < 3);
   // tau = (dPsi / de) b
-  SymmetricMatUnpack(dPsi_sym, dPsi);
+  SymmetricMatUnpack(gradPsi_sym, gradPsi);
   SymmetricMatUnpack(b_sym, b);
-  MatMatMult(1., dPsi, b, tau);
+  MatMatMult(1., gradPsi, b, tau);
   SymmetricMatPack(tau, tau_sym);
   return tau_sym;
 }

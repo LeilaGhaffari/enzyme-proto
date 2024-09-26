@@ -54,7 +54,7 @@ double *Kirchhofftau_sym_NeoHookean_AD_ADOLC(const double lambda, const double m
     auto F_p = new double[m];
     double **e_sym = myalloc(n, p);
     double **F = myalloc(m, p);
-    double dPsi_sym[n];
+    double gradPsi_sym[n];
 
     // Start tracing floating point operations
     trace_on(tag);
@@ -75,11 +75,11 @@ double *Kirchhofftau_sym_NeoHookean_AD_ADOLC(const double lambda, const double m
     // dPsi / de
     fov_forward(tag, m, n, p, e_p, e_sym, F_p, F);
     for (int i=0; i<n; i++) {
-      dPsi_sym[i] = F[0][i];
-      if (i>2) dPsi_sym[i] /= 2.;
+      gradPsi_sym[i] = F[0][i];
+      if (i>2) gradPsi_sym[i] /= 2.;
     }
 
-    return tau_from_dPsi(dPsi_sym, e_p);
+    return tau_from_gradPsi(gradPsi_sym, e_p);
 };
 
 double *dtau_ADOLC(double e_p[6], const double lambda, const double mu) {
