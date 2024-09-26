@@ -21,82 +21,65 @@ adouble RatelLog1pSeries(adouble x) {
 
 adouble RatelVoigtTrace(adouble V[6]) { return V[0] + V[1] + V[2]; }
 
-adouble StrainEnergy(adouble E_Voigt[6], const double lambda, const double mu) {
+adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
   // Calculate 2*E
-  adouble E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i] * 2;
+  adouble E2_sym[6];
+  for(int i = 0; i<6; i++) E2_sym[i] = E_sym[i] * 2;
 
   // log(J)
-  adouble detCm1 = RatelVoigtDetAM1(E2_Voigt);
+  adouble detCm1 = RatelVoigtDetAM1(E2_sym);
 
   //double J      = sqrt(detCm1 + 1);
   adouble logJ   = RatelLog1pSeries(detCm1) / 2.;
 
   // trace(E)
-  adouble traceE = RatelVoigtTrace(E_Voigt);
+  adouble traceE = RatelVoigtTrace(E_sym);
 
   return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
 };
 
-double *Stress(double Ep[6], const double lambda, const double mu) {
-    int tag = 1;
-    auto Ea = new adouble[n];
-    auto Fa = new adouble[m];
-    auto Fp = new double[m];
-    auto S = new double[n];
-    double **E = myalloc(n, p);
-    double **F = myalloc(m, p);
+void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const double mu) {
+  // Active section for AD
+  int tag = 1;
+  auto Ea = new adouble[n];
+  auto Fa = new adouble[m];
+  auto Fp = new double[m];
+  trace_on(tag); // Start tracing floating point operations
+  for (int i=0; i<n; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
+  Fa[0] = StrainEnergy(Ea, lambda, mu); // Evaluate the body of the differentiated code
+  Fa[0] >>= Fp[0]; // Assign dXpendent variables
+  trace_off();    // End of the active section
 
-    // Start tracing floating point operations
-    trace_on(tag);
-    // Assign independent variables
-    for (int i=0; i<n; i++) Ea[i] <<= Ep[i];
-    // Evaluate the body of the differentiated code
-    Fa[0] = StrainEnergy(Ea, lambda, mu);
-    // Assign dependent variables
-    Fa[0] >>= Fp[0];
-    trace_off();    // End of the active section
-
-    for (int i = 0; i < n; i++) { // Identity matrix
-        for (int j = 0; j < p; j++) if (i == j) E[i][j] = 1.;
-        else  E[i][j] = 0.00;
-    }
-
-    fov_forward(tag, m, n, p, Ep, E, Fp, F);
-
-    for (int i=0; i<n; i++) {
-      S[i] = F[0][i];
-      if (i>2) S[i] /= 2.;
-    }
-
-    return S;
+  // Compute the gradient
+  gradient(tag, n, Xp, grad);
+  for (int i=0; i<n; i++) if (i>2) grad[i] /= 2.;
 };
 
-double *dStress(double Ep[6], const double lambda, const double mu) {
+void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, const double mu) {
+    // Active section for AD
     int tag = 1;
     auto Fp = new double[m];
-    adouble* E = new adouble[n];
-    adouble* F = new adouble[m];
-    auto dS = new double[n];
-    double** I = new double*[n];
-    double** dtensor; // size = m x dim
-
-    for (int i=0; i<n; i++) { // Identity matrix
-        I[i] = new double[p];
-        for (int j=0; j<p; j++) I[i][j] = (i == j) ? 1.0 : 0.0;
-    }
-
+    adouble* Xa = new adouble[n];
+    adouble* Fa = new adouble[m];
     trace_on(tag);
-    for (int i=0; i<n; i++) E[i] <<= Ep[i];
-    F[0] = StrainEnergy(E, lambda, mu);
-    F[0] >>= Fp[0];
+    for (int i=0; i<n; i++) Xa[i] <<= Xp[i];
+    Fa[0] = StrainEnergy(Xa, lambda, mu);
+    Fa[0] >>= Fp[0];
     trace_off();
 
-    int dim = binomi(p + d, d);
-    dtensor = myalloc2(m, dim);
-    tensor_eval(tag, m, n, d, p, Ep, dtensor, I);
+    // Allocate data array for the lower half of the hessian matrix
+    double **H = (double **)malloc(n * sizeof(double *));
+    for(int i=0; i<n; i++) H[i] = (double *)malloc((i+1) * sizeof(double));
 
-    for (int i=0; i<dim; i++) dS[i] = dtensor[0][i];
+    // Compute the hessian matrix
+    hessian(tag, n, Xp, H);
 
-    return dS;
+    // Populate hess
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<i+1; j++) {
+        hess[i][j] = H[i][j];
+        if (i != j) hess[j][i] = hess[i][j];
+      }
+    }
+    for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) hess[i][j] /= 2.;
 };

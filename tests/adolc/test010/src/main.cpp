@@ -7,7 +7,8 @@
 #include <adolc/adolc.h>
 
 using namespace std;
-static int m = 1, n = 6, d = 2, p = 6;
+static int m = 1, //number of dependent variables
+           n = 6; //number of independent variables
 
 #include "../include/ratel-nh-initial.hpp"
 #include "../include/ratel-nh-initial-adolc.hpp"
@@ -16,7 +17,6 @@ static int m = 1, n = 6, d = 2, p = 6;
 
 int main() {
   const double mu = 1., lambda = 1.;
-  int size = binomi(p + d, d), temp = 1;
 
   double grad_u[3][3] = {
     {0.0702417, 0.4799115, 0.3991242},
@@ -45,76 +45,55 @@ int main() {
 
   // deltaE - Green-Lagrange strain tensor
   const int ind_j[n] = {0, 1, 2, 1, 0, 0}, ind_k[n] = {0, 1, 2, 2, 2, 1};
-  double    delta_E_Voigt[n];
+  double    dE_sym[n];
   for (int mm = 0; mm < n; mm++) {
-    delta_E_Voigt[mm] = 0;
+    dE_sym[mm] = 0;
     for (int nn = 0; nn < 3; nn++) {
-      delta_E_Voigt[mm] += (grad_delta_u[nn][ind_j[mm]] * F[nn][ind_k[mm]] + F[nn][ind_j[mm]] * grad_delta_u[nn][ind_k[mm]]) / 2.;
+      dE_sym[mm] += (grad_delta_u[nn][ind_j[mm]] * F[nn][ind_k[mm]] + F[nn][ind_j[mm]] * grad_delta_u[nn][ind_k[mm]]) / 2.;
     }
   }
 
-  // Green Lagrange Strain Tensor: E (voigt)
-  double E_Voigt[n];
-  GreenLagrangeStrain(temp_grad_u, E_Voigt);
+  // Green Lagrange Strain Tensor: E
+  double E_sym[n];
+  GreenLagrangeStrain(temp_grad_u, E_sym);
 
   // Second Piola-Kirchhoff: S
   double S_an[n];
-  SecondPiolaKirchhoffStress_NeoHookean_Analytical(E_Voigt, S_an, lambda, mu); // Analytical
+  SecondPiolaKirchhoffStress_NeoHookean_Analytical(E_sym, S_an, lambda, mu); // Analytical
 
   // ------------------------------------------------------------------------
   // Automatic Differentiation
   // ------------------------------------------------------------------------
   // Initialize passive variables
   auto Ep = new double[n];
-  for (int i=0; i<n; i++) Ep[i] = E_Voigt[i];
+  for (int i=0; i<n; i++) Ep[i] = E_sym[i];
 
-  // First derivative (forward vector mode)
-  auto S_fwd = Stress(Ep, lambda, mu);
+  // Compute the gradient of Psi (S = dPsi/dE)
+  double S_sym[6] = {0.};
+  ComputeGradPsi(S_sym, Ep, lambda, mu);
 
-  // High order tensor
-  // -----------------
-  double F_tensor;
-  double S_tensor[n] = {0.};
-  double dS_tensor[n][n] ={{0.}};
-  double dS[n] = {0.};
-
-  // Tensor-AD evaluation
-  auto tensor = dStress(Ep, lambda, mu);
-
-  // Strain energy
-  F_tensor = tensor[0];
-
-  for (int i=0; i<n; i++) {
-    S_tensor[i] = tensor[temp]; // Populate stress (1st derivative)
-    if (i>2) S_tensor[i] /= 2.;
-    for (int j=0; j<i+1; j++) {
-      dS_tensor[i][j] = tensor[temp+j+1]; // Populate delta_S (2nd derivative)
-      if (i != j) dS_tensor[j][i] = dS_tensor[i][j];
-    }
-    temp += i + 2;
-  }
-  for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) dS_tensor[i][j] /= 2.;
+  // Compute the hessian of Psi (d2Psi/dE2)
+  double hessPsi[6][6] = {{0.}};
+  ComputeHessianPsi(hessPsi, Ep, lambda, mu);
 
   // Compute dS
-  for (int i=0; i<n; i++) {
-    for (int j=0; j<n; j++) dS[i] += dS_tensor[i][j] * delta_E_Voigt[j];
-  }
+  double dS[6] = {0.};
+  for (int i=0; i<n; i++) for (int j=0; j<n; j++) dS[i] += hessPsi[i][j] * dE_sym[j];
 
   // ------------------------------------------------------------------------
   // Print
   // ------------------------------------------------------------------------
   cout.precision(12);
   cout.setf(ios::fixed);
-  cout << "\n size = " << size << endl;
-  cout << "\n Strain energy = " << F_tensor << endl;
+  cout << "\n Strain energy = " << StrainEnergy(E_sym, lambda, mu) << endl;
   cout << "\n Stress =" << endl;
-  cout << "\n   Forward Vector Mode:" << endl << endl;
-  for (int i=0; i<n; i++) cout << "\t" << S_fwd[i] << endl;
+  cout << "\n   Analytical:" << endl << endl;
+  for (int i=0; i<n; i++) cout << "\t" << S_an[i] << endl;
   cout << endl;
-  cout << "\n   Higher Order Tensor:" << endl << endl;
-  for (int i=0; i<n; i++) cout << "\t" << S_tensor[i] << endl;
+  cout << "\n   ADOL-C gradient:" << endl << endl;
+  for (int i=0; i<n; i++) cout << "\t" << S_sym[i] << endl;
   cout << endl;
-  cout << "\n dS =" << endl << endl;
+  cout << "\n dS (ADOL-C hessian) =" << endl << endl;
   for (int i=0; i<n; i++) cout << "\t" << dS[i] << endl;
   cout << endl;
 
@@ -122,13 +101,21 @@ int main() {
 }
 
 /*
- size = 28
-
  Strain energy = 0.922656758772
 
  Stress =
 
-   Forward Vector Mode:
+   Analytical:
+
+        -2.243659409307
+        -2.164756566213
+        -0.329653373905
+        -0.698950464066
+        1.116803026863
+        2.683783965185
+
+
+   ADOL-C gradient:
 
         -2.243659385920
         -2.164756543395
@@ -138,17 +125,7 @@ int main() {
         2.683783945834
 
 
-   Higher Order Tensor:
-
-        -2.243659385920
-        -2.164756543395
-        -0.329653364318
-        -0.698950459026
-        1.116803018811
-        2.683783945834
-
-
- dS =
+ dS (ADOL-C hessian) =
 
         2.533390355923
         2.921532744535
