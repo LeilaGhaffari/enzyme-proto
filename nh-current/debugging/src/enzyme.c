@@ -78,44 +78,44 @@ int main() {
   // ------------------------------------------------------------------------
   double E_sym[6];
   Compute_E_symmetric(Grad_u, E_sym);
-  printf("\n\nE_sym =");
+  printf("\n\nE =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", E_sym[i]);
 
   printf("\n\nStrain Energy from e = ");
-  printf(" %.6lf", StrainEnergy_Enzyme(e_sym, lambda, mu));
+  printf(" %.12lf", StrainEnergy_Enzyme(e_sym, lambda, mu));
 
-  printf("\n\nStrain Energy from E = ");
-  printf(" %.6lf", StrainEnergy_Enzyme(E_sym, lambda, mu));
-
-  double S_sym_pb[6];
-  PullBack_symmetric(Grad_u, tau_sym, S_sym_pb);
-  printf("\n\nS_sym from pull-back =");
-  for (int i=0; i<6; i++) printf("\n\t%.12lf", S_sym_pb[i]);
+  printf("\nStrain Energy from E = ");
+  printf(" %.12lf", StrainEnergy_Enzyme(E_sym, lambda, mu));
 
   double S_sym_ad[6];
   S_sym_Enzyme(lambda, mu, E_sym, S_sym_ad);
-  printf("\n\nS_sym from AD =");
+  printf("\n\nS from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", S_sym_ad[i]);
 
-  double tau_sym_pf[6];
-  PushForward_symmetric(Grad_u,  S_sym_ad, tau_sym_pf);
-  printf("\n\ntau_sym from push-forward =");
-  for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym_pf[i]);
-
-  double dE_sym[6];
-  PullBack_symmetric(Grad_u, de_sym, dE_sym); // TODO (this is not correct)
-  //printf("\n\ndE_sym from pull-back =");
-  //for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
-
-  double dS_sym_ad[6];
-  dS_fwd_Enzyme(lambda, mu, E_sym, dE_sym, S_sym_ad, dS_sym_ad);
-  //printf("\n\ndS_sym from AD =");
-  //for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_ad[i]);
+  double S_sym_pb[6];
+  PullBack_symmetric(Grad_u, tau_sym, S_sym_pb);
+  printf("\n\nS from pull-back =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", S_sym_pb[i]);
 
   printf("\n\ntau from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym[i]);
 
-  printf("\n\ndtau from AD=");
+  double tau_sym_pf[6];
+  PushForward_symmetric(Grad_u,  S_sym_ad, tau_sym_pf);
+  printf("\n\ntau from push-forward =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym_pf[i]);
+
+  double dE_sym[6];
+  PullBack_symmetric(Grad_u, de_sym, dE_sym); // TODO (this is not correct)
+  //printf("\n\ndE from pull-back =");
+  //for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
+
+  double dS_sym_ad[6];
+  dS_fwd_Enzyme(lambda, mu, E_sym, dE_sym, S_sym_ad, dS_sym_ad);
+  //printf("\n\ndS from AD =");
+  //for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_ad[i]);
+
+  printf("\n\ndtau from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym[i]);
   printf("\n\n");
 
