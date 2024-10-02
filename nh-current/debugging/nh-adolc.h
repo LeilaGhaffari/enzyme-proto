@@ -9,15 +9,6 @@ adouble MatDetAM1Symmetric(adouble A_sym[6]) {
 
 adouble MatTraceSymmetric(adouble A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
 
-adouble VoigtDetAM1(const adouble V[6]) {
-    return V[0] * (V[1] * V[2] - V[3] * V[3]) +
-           V[5] * (V[3] * V[4] - V[5] * V[2]) +
-           V[4] * (V[5] * V[3] - V[4] * V[1]) +
-           V[0] + V[1] + V[2] +
-           V[0] * V[1] + V[0] * V[2] + V[1] * V[2] -
-           V[5] * V[5] - V[4] * V[4] - V[3] * V[3];
-};
-
 adouble Log1pSeries(adouble x) {
     adouble sum = 0;
     adouble y = x / (2. + x);
@@ -29,8 +20,6 @@ adouble Log1pSeries(adouble x) {
     }
     return 2 * sum;
 };
-
-adouble VoigtTrace(adouble V[6]) { return V[0] + V[1] + V[2]; }
 
 adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
   adouble E2_sym[6];

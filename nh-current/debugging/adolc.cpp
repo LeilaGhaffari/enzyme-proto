@@ -13,8 +13,6 @@ static int m = 1, // number of dependent variables
 #include "nh-common.h"
 #include "nh-adolc.h"
 
-
-
 int main() {
   const double mu = 1., lambda = 1.;
 

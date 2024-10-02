@@ -1,8 +1,5 @@
-// Standard Neo-Hookean formulation in current configuration with Enzyme
-
+// Standard Neo-Hookean formulation  with Enzyme
 #include "nh-enzyme.h"
-
-
 
 int main() {
   const double mu = 1., lambda = 1.;
@@ -127,6 +124,7 @@ int main() {
 }
 
 /*
+
 Strain Energy =  0.338798
 
 tau =

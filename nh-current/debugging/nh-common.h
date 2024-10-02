@@ -49,18 +49,6 @@ int MatMatMult(double alpha, const double A[3][3], const double B[3][3], double 
   return 0;
 }
 
-void VoigtUnpack(const double sym[6], double full[3][3]) {
-  full[0][0] = sym[0];
-  full[0][1] = sym[5];
-  full[0][2] = sym[4];
-  full[1][0] = sym[5];
-  full[1][1] = sym[1];
-  full[1][2] = sym[3];
-  full[2][0] = sym[4];
-  full[2][1] = sym[3];
-  full[2][2] = sym[2];
-};
-
 int MatComputeInverseSymmetric(const double A[3][3], const double det_A, double A_inv[6]) {
   // Compute A^(-1) : A-Inverse
   double B[6] = {
@@ -98,15 +86,6 @@ double MatDetAM1(const double A[3][3]) {
            A[0][1] * A[1][0] - A[0][2] * A[2][0] - A[1][2] * A[2][1];
 };
 
-double VoigtDetAM1(const double V[6]) {
-    return V[0] * (V[1] * V[2] - V[3] * V[3]) +
-           V[5] * (V[3] * V[4] - V[5] * V[2]) +
-           V[4] * (V[5] * V[3] - V[4] * V[1]) +
-           V[0] + V[1] + V[2] +
-           V[0] * V[1] + V[0] * V[2] + V[1] * V[2] -
-           V[5] * V[5] - V[4] * V[4] - V[3] * V[3];
-};
-
 double Log1pSeries(double x) {
     double sum = 0;
     double y = x / (2. + x);
@@ -119,14 +98,12 @@ double Log1pSeries(double x) {
     return 2 * sum;
 };
 
-double VoigtTrace(double V[6]) { return V[0] + V[1] + V[2]; };
-
-void SecondPiolaKirchhoffStress_NeoHookean_Analytical(double E_sym[6], double S_Voigt[6], const double lambda, const double mu) {
-  double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = 2*E_sym[i];
+void SecondPiolaKirchhoffStress_NeoHookean_Analytical(double E_sym[6], double S_sym[6], const double lambda, const double mu) {
+  double E2_sym[6];
+  for(int i = 0; i<6; i++) E2_sym[i] = 2*E_sym[i];
 
   double E2[3][3];
-  VoigtUnpack(E2_Voigt, E2);
+  SymmetricMatUnpack(E2_sym, E2);
 
   // Right Cauchy-Green tensor
   double C[3][3] = {{1 + E2[0][0], E2[0][1], E2[0][2]},
@@ -135,19 +112,19 @@ void SecondPiolaKirchhoffStress_NeoHookean_Analytical(double E_sym[6], double S_
                     };
 
   // Compute C^(-1) : C-Inverse
-  double Cinv_Voigt[6];
+  double Cinv_sym[6];
   double C_inv[3][3];
   double detCm1 = MatDetAM1(E2);
-  MatComputeInverseSymmetric(C, detCm1+1, Cinv_Voigt);
-  VoigtUnpack(Cinv_Voigt, C_inv);
+  MatComputeInverseSymmetric(C, detCm1+1, Cinv_sym);
+  SymmetricMatUnpack(Cinv_sym, C_inv);
 
   // Compute the Second Piola-Kirchhoff (S)
   int indj[6] = {0, 1, 2, 1, 0, 0}, indk[6] = {0, 1, 2, 2, 2, 1};
   double logJ = Log1pSeries(detCm1) / 2.;
   for ( int m = 0; m < 6; m++) {
-      S_Voigt[m] = lambda*logJ*Cinv_Voigt[m];
+      S_sym[m] = lambda*logJ*Cinv_sym[m];
       for ( int n = 0; n < 3; n++)
-          S_Voigt[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
+          S_sym[m] += mu*C_inv[indj[m]][n]*E2[n][indk[m]];
   }
 };
 
@@ -188,17 +165,17 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
 
 double StrainEnergy(double E_sym[6], const double lambda, const double mu) {
   // Calculate 2*E
-  double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_sym[i] * 2;
+  double E2_sym[6];
+  for(int i = 0; i<6; i++) E2_sym[i] = E_sym[i] * 2;
 
   // log(J)
-  double detCm1 = VoigtDetAM1(E2_Voigt);
+  double detCm1 = MatDetAM1Symmetric(E2_sym);
 
   //double J      = sqrt(detCm1 + 1);
   double logJ   = Log1pSeries(detCm1) / 2.;
 
   // trace(E)
-  double traceE = VoigtTrace(E_sym);
+  double traceE = MatTraceSymmetric(E_sym);
 
   return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
 };
