@@ -1,5 +1,5 @@
 // Standard Neo-Hookean formulation  with Enzyme
-#include "nh-enzyme.h"
+#include "../include/nh-enzyme.h"
 
 int main() {
   const double mu = 1., lambda = 1.;

@@ -1,49 +1,52 @@
 ENZYME_LIB ?=
+ADOLC_INCLUDE ?=
+ADOLC_LIB ?=
+
 CC = clang-18
-CFLAGS = $(OPT) -Xclang -load -Xclang $(ENZYME_LIB) -Wall -Wextra -Wunused-variable -Wunused-function
+CFLAGS = $(OPT) -Xclang -load -Xclang $(ENZYME_LIB) -Wall -Wextra -Wunused-variable -Wunused-function -Iinclude
 LDFLAGS = -lm
 
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra -Wunused-variable -Wunused-function
+CXXFLAGS = -std=c++11 -Wall -Wextra -Wunused-variable -Wunused-function -Iinclude -I$(ADOLC_INCLUDE)
+
+# Directories
+SRCDIR = src
+INCDIR = include
+BUILDDIR = build
 
 # Source files
-src.c = enzyme.c
-src.cpp = adolc.cpp
+SRC_C = $(SRCDIR)/enzyme.c
+SRC_CPP = $(SRCDIR)/adolc.cpp
 
 # Object files
-BUILD_DIR = build
-obj.c = $(addprefix $(BUILD_DIR)/, $(src.c:.c=.o))
-obj.cpp = $(addprefix $(BUILD_DIR)/, $(src.cpp:.cpp=.o))
+OBJ_C = $(BUILDDIR)/$(notdir $(SRC_C:.c=.o))
+OBJ_CPP = $(BUILDDIR)/$(notdir $(SRC_CPP:.cpp=.o))
 
 # Executable names
-TARGET_C = $(BUILD_DIR)/enzyme-exec
-TARGET_CPP = $(BUILD_DIR)/adolc-exec
+TARGET_C = $(BUILDDIR)/enzyme-exec
+TARGET_CPP = $(BUILDDIR)/adolc-exec
 
 # Default rule
 all: $(TARGET_C) $(TARGET_CPP)
 
-# Link object files to create the C executable
-$(TARGET_C): $(obj.c)
-	$(CC) $(CFLAGS) -o $@ $(obj.c) $(LDFLAGS)
+# Link object files to create the executable (C)
+$(TARGET_C): $(OBJ_C)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Compile C source files to object files
-$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+# Link object files to create the executable (C++)
+$(TARGET_CPP): $(OBJ_CPP)
+	$(CXX) $(CXXFLAGS) -I$(ADOLC_INCLUDE) -I$(INCDIR) -L$(ADOLC_LIB) -o $@ $^ -ladolc
+
+# Compile source files to object files (C)
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Link object files to create the C++ executable
-$(TARGET_CPP): $(obj.cpp)
-	$(CXX) $(CXXFLAGS) -I$(ADOLC_INCLUDE) -L$(ADOLC_LIB) -o $@ $(obj.cpp) -ladolc
-
-# Compile C++ source files to object files
-$(BUILD_DIR)/%.o: %.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -I$(ADOLC_INCLUDE) -c $< -o $@
-
-# Create the build directory if it doesn't exist
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+# Compile source files to object files (C++)
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -I$(ADOLC_INCLUDE) -I$(INCDIR) -c $< -o $@
 
 # Clean rule
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -f $(BUILDDIR)/*.o $(TARGET_C) $(TARGET_CPP)
 
 .PHONY: all clean

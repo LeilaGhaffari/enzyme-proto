@@ -10,8 +10,8 @@ using namespace std;
 static int m = 1, // number of dependent variables
            n = 6; // number of independent variables
 
-#include "nh-common.h"
-#include "nh-adolc.h"
+#include "../include/nh-common.h"
+#include "../include/nh-adolc.h"
 
 int main() {
   const double mu = 1., lambda = 1.;
