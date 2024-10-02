@@ -98,19 +98,40 @@ void GreenLagrangeStrain(const double grad_u[3][3], double E[6]) {
   }
 };
 
-double StrainEnergy(double E_Voigt[6], const double lambda, const double mu) {
-  // Calculate 2*E
-  double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i] * 2;
+double MatDetAM1Symmetric(const double A_sym[6]) {
+  return A_sym[0] * (A_sym[1] * A_sym[2] - A_sym[3] * A_sym[3]) +          /* *NOPAD* */
+         A_sym[5] * (A_sym[3] * A_sym[4] - A_sym[5] * A_sym[2]) +          /* *NOPAD* */
+         A_sym[4] * (A_sym[5] * A_sym[3] - A_sym[4] * A_sym[1]) +          /* *NOPAD* */
+         A_sym[0] + A_sym[1] + A_sym[2] +                                  /* *NOPAD* */
+         A_sym[0] * A_sym[1] + A_sym[0] * A_sym[2] + A_sym[1] * A_sym[2] - /* *NOPAD* */
+         A_sym[5] * A_sym[5] - A_sym[4] * A_sym[4] - A_sym[3] * A_sym[3];  /* *NOPAD* */
+};
 
-  // log(J)
-  double detCm1 = RatelVoigtDetAM1(E2_Voigt);
+double MatTraceSymmetric(const double A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
 
-  //double J      = sqrt(detCm1 + 1);
-  double logJ   = RatelLog1pSeries(detCm1) / 2.;
+double Log1pSeries(double x) {
+    double sum = 0;
+    double y = x / (2. + x);
+    double y2 = y*y;
+    sum += y;
+    for (int i=0; i<5; i++) {
+      y *= y2;
+      sum += y / (2*i + 3);
+    }
+    return 2 * sum;
+};
+
+double StrainEnergy(double E_sym[6], const double lambda, const double mu) {
+  double E2_sym[6];
+
+  // J and log(J)
+  for (int i = 0; i < 6; i++) E2_sym[i] = 2 * E_sym[i];
+  double detCm1 = MatDetAM1Symmetric(E2_sym);
+  double J      = sqrt(detCm1 + 1);
+  double logJ   = Log1pSeries(detCm1) / 2.;
 
   // trace(E)
-  double traceE = RatelVoigtTrace(E_Voigt);
+  double traceE = MatTraceSymmetric(E_sym);
 
-  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
+  return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + traceE);
 };

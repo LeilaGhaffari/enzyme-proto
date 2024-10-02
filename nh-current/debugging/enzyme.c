@@ -50,9 +50,8 @@ int main() {
   // Automatic Differentiation
   // ------------------------------------------------------------------------
   // tau = dPsi b
-  double tau_sym[6], tau[3][3];
-  Kirchhofftau_sym_NeoHookean_AD(lambda, mu, e_sym, tau_sym);
-  SymmetricMatUnpack(tau_sym, tau);
+  double tau_sym[6];
+  tau_sym_Enzyme(lambda, mu, e_sym, tau_sym);
 
   // Compute grad_du = ddu/dX * dX/dx
   // X is ref coordinate [-1,1]^3; x is physical coordinate in current configuration
@@ -74,22 +73,52 @@ int main() {
   GreenEulerStrain_fwd(grad_du, b, de_sym);
 
   // Compute dtau with Enzyme-AD
-  double dtau_sym[6], dtau[3][3];
-  dtau_fwd(lambda, mu, e_sym, de_sym, tau_sym, dtau_sym);
-  SymmetricMatUnpack(tau_sym, tau);
-  SymmetricMatUnpack(dtau_sym, dtau);
+  double dtau_sym[6];
+  dtau_fwd_Enzyme(lambda, mu, e_sym, de_sym, tau_sym, dtau_sym);
 
   // ------------------------------------------------------------------------
-  // Print
+  // Pull-back for debugging
   // ------------------------------------------------------------------------
-  printf("\n\nStrain Energy = ");
-  printf(" %.6lf \n", StrainEnergy_NeoHookeanCurrentAD_Enzyme(e_sym, lambda, mu));
+  double E_sym[6];
+  PullBack_symmetric(Grad_u, e_sym, E_sym);
+  printf("\n\nE_sym from pull-back =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", E_sym[i]);
 
-  printf("\ntau =\n");
+  double dE_sym[6];
+  PullBack_symmetric(Grad_u, de_sym, dE_sym);
+  printf("\n\ndE_sym from pull-back =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
+
+  double S_sym_pb[6];
+  PullBack_symmetric(Grad_u, tau_sym, S_sym_pb);
+  printf("\n\nS_sym from pull-back =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", S_sym_pb[i]);
+
+  printf("\n\nStrain Energy from pull-back = ");
+  printf(" %.6lf", StrainEnergy_Enzyme(E_sym, lambda, mu));
+
+  double S_sym_ad[6];
+  S_sym_Enzyme(lambda, mu, E_sym, S_sym_ad);
+  printf("\n\nS_sym from AD =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", S_sym_ad[i]);
+
+  double dS_sym_ad[6];
+  dS_fwd_Enzyme(lambda, mu, E_sym, dE_sym, S_sym_ad, dS_sym_ad);
+  printf("\n\ndS_sym from AD =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_ad[i]);
+
+  double tau_sym_pf[6];
+  PushForward_symmetric(Grad_u,  S_sym_ad, tau_sym_pf);
+  printf("\n\ntau_sym from push-forward =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym_pf[i]);
+
+  printf("\n\nStrain Energy from e = ");
+  printf(" %.6lf", StrainEnergy_Enzyme(e_sym, lambda, mu));
+
+  printf("\n\ntau from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym[i]);
-  printf("\n\n");
 
-  printf("\ndtau         =\n");
+  printf("\n\ndtau from AD=");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym[i]);
   printf("\n\n");
 
@@ -118,4 +147,9 @@ dtau         =
         0.750807688616
         0.714042268606
         0.712369842831
+*/
+
+/*
+push-forward: a = F A F^T
+pull-back: A = F^{-1} a F^{-T}
 */

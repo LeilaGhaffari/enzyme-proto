@@ -4,7 +4,12 @@
 #include <string.h>
 #include "nh-common.h"
 
-double  StrainEnergy_NeoHookeanCurrentAD_Enzyme(double e_sym[6], double lambda, double mu) {
+void       __enzyme_autodiff(void *, ...);
+void       __enzyme_fwddiff(void *, ...);
+extern int enzyme_const;
+
+// passing either e or E should be correct
+double  StrainEnergy_Enzyme(double e_sym[6], double lambda, double mu) {
   double e2_sym[6];
 
   // J and log(J)
@@ -19,35 +24,16 @@ double  StrainEnergy_NeoHookeanCurrentAD_Enzyme(double e_sym[6], double lambda, 
   return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + trace_e);
 }
 
-/// @}
-
 // -----------------------------------------------------------------------------
-//  Compute Kirchhoff stress
+// Current configuration
 // -----------------------------------------------------------------------------
-// -- Enzyme-AD
-void       __enzyme_autodiff(void *, ...);
-void       __enzyme_fwddiff(void *, ...);
-extern int enzyme_const;
-
 void *__enzyme_function_like[2] = {(void *)Log1pSeries, (void *)"log1p"};
 
-/// @addtogroup Materials
-/// @{
-
-/**
-  @brief Compute Kirchoff tau for neo-Hookean hyperelasticity in current configuration with Enzyme
-
-  @param[in]   lambda    Lamé parameter
-  @param[in]   mu        Shear modulus
-  @param[in]   e_sym     Green Euler strain, in symmetric representation
-  @param[out]  tau_sym   Kirchoff tau, in symmetric representation
-**/
- void Kirchhofftau_sym_NeoHookean_AD(const double lambda, const double mu, double e_sym[6],
-                                                               double tau_sym[6]) {
+void tau_sym_Enzyme(const double lambda, const double mu, double e_sym[6], double tau_sym[6]) {
   double dPsi_sym[6] = {0.}, b_sym[6], dPsi[3][3], b[3][3], tau[3][3];
 
   // dPsi / de
-  __enzyme_autodiff((void *)StrainEnergy_NeoHookeanCurrentAD_Enzyme, e_sym, dPsi_sym, enzyme_const, lambda, enzyme_const, mu);
+  __enzyme_autodiff((void *)StrainEnergy_Enzyme, e_sym, dPsi_sym, enzyme_const, lambda, enzyme_const, mu);
   for (int i = 3; i < 6; i++) dPsi_sym[i] /= 2.;
 
   // b = 2 e + I
@@ -60,7 +46,21 @@ void *__enzyme_function_like[2] = {(void *)Log1pSeries, (void *)"log1p"};
   SymmetricMatPack(tau, tau_sym);
 }
 
-void dtau_fwd(const double lambda, const double mu, double e_sym[6], double de_sym[6],
+void dtau_fwd_Enzyme(const double lambda, const double mu, double e_sym[6], double de_sym[6],
                                          double tau_sym[6], double dtau_sym[6]) {
-  __enzyme_fwddiff((void *)Kirchhofftau_sym_NeoHookean_AD, enzyme_const, lambda, enzyme_const, mu, e_sym, de_sym, tau_sym, dtau_sym);
+  __enzyme_fwddiff((void *)tau_sym_Enzyme, enzyme_const, lambda, enzyme_const, mu, e_sym, de_sym, tau_sym, dtau_sym);
+}
+
+// -----------------------------------------------------------------------------
+// Initial configuration
+// -----------------------------------------------------------------------------
+void S_sym_Enzyme(const double lambda, const double mu, double E_sym[6], double S_sym[6]) {
+  // dPsi / dE
+  __enzyme_autodiff((void *)StrainEnergy_Enzyme, E_sym, S_sym, enzyme_const, lambda, enzyme_const, mu);
+  for (int i = 3; i < 6; i++) S_sym[i] /= 2.;
+}
+
+void dS_fwd_Enzyme(const double lambda, const double mu, double E_sym[6], double dE_sym[6],
+                                         double S_sym[6], double dS_sym[6]) {
+  __enzyme_fwddiff((void *)S_sym_Enzyme, enzyme_const, lambda, enzyme_const, mu, E_sym, dE_sym, S_sym, dS_sym);
 }

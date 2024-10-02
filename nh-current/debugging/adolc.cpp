@@ -10,8 +10,8 @@ using namespace std;
 static int m = 1, // number of dependent variables
            n = 6; // number of independent variables
 
-#include "../include/ratel-nh-initial.hpp"
-#include "../include/ratel-nh-initial-adolc.hpp"
+#include "nh-common.h"
+#include "nh-adolc.hpp"
 
 
 

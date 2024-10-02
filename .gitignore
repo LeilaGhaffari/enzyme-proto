@@ -11,3 +11,4 @@ hello
 build
 exec
 *.o
+*-exec

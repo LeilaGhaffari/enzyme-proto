@@ -121,9 +121,9 @@ double Log1pSeries(double x) {
 
 double VoigtTrace(double V[6]) { return V[0] + V[1] + V[2]; };
 
-void SecondPiolaKirchhoffStress_NeoHookean_Analytical(double E_Voigt[6], double S_Voigt[6], const double lambda, const double mu) {
+void SecondPiolaKirchhoffStress_NeoHookean_Analytical(double E_sym[6], double S_Voigt[6], const double lambda, const double mu) {
   double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = 2*E_Voigt[i];
+  for(int i = 0; i<6; i++) E2_Voigt[i] = 2*E_sym[i];
 
   double E2[3][3];
   VoigtUnpack(E2_Voigt, E2);
@@ -186,10 +186,10 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
   return 0;
 }
 
-double StrainEnergy(double E_Voigt[6], const double lambda, const double mu) {
+double StrainEnergy(double E_sym[6], const double lambda, const double mu) {
   // Calculate 2*E
   double E2_Voigt[6];
-  for(int i = 0; i<6; i++) E2_Voigt[i] = E_Voigt[i] * 2;
+  for(int i = 0; i<6; i++) E2_Voigt[i] = E_sym[i] * 2;
 
   // log(J)
   double detCm1 = VoigtDetAM1(E2_Voigt);
@@ -198,7 +198,7 @@ double StrainEnergy(double E_Voigt[6], const double lambda, const double mu) {
   double logJ   = Log1pSeries(detCm1) / 2.;
 
   // trace(E)
-  double traceE = VoigtTrace(E_Voigt);
+  double traceE = VoigtTrace(E_sym);
 
   return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
 };
@@ -213,4 +213,39 @@ int MatMatTransposeMult(const double A[3][3], const double B[3][3], double C[3][
     }
   }
   return 0;
+};
+
+void PullBack_symmetric(double Grad_u[3][3], double a_sym[6], double A_sym[6]) {
+  // F = I + Grad_u
+  const double F[3][3] = {
+    {Grad_u[0][0] + 1, Grad_u[0][1],     Grad_u[0][2]    },
+    {Grad_u[1][0],     Grad_u[1][1] + 1, Grad_u[1][2]    },
+    {Grad_u[2][0],     Grad_u[2][1],     Grad_u[2][2] + 1}
+  };
+  // F^{-1}
+  double F_inv[3][3];
+  const double Jm1  = MatDetAM1(Grad_u);
+  const double detF = Jm1 + 1.;
+  MatInverse(F, detF, F_inv);
+  // A = F_inv * a * F_inv_T (pull-back)
+  double F_inv_a[3][3], a[3][3], A[3][3];
+  SymmetricMatUnpack(a_sym, a);
+  MatMatMult(1., F_inv, a, F_inv_a);
+  MatMatTransposeMult(F_inv_a, F_inv, A);
+  SymmetricMatPack(A, A_sym);
+};
+
+void PushForward_symmetric(double Grad_u[3][3], double A_sym[6], double a_sym[6]) {
+  // F = I + Grad_u
+  const double F[3][3] = {
+    {Grad_u[0][0] + 1, Grad_u[0][1],     Grad_u[0][2]    },
+    {Grad_u[1][0],     Grad_u[1][1] + 1, Grad_u[1][2]    },
+    {Grad_u[2][0],     Grad_u[2][1],     Grad_u[2][2] + 1}
+  };
+  // a = F * A * F^T (push-forward)
+  double F_A[3][3], a[3][3], A[3][3];
+  SymmetricMatUnpack(A_sym, A);
+  MatMatMult(1., F, A, F_A);
+  MatMatTransposeMult(F_A, F, a);
+  SymmetricMatPack(a, a_sym);
 };
