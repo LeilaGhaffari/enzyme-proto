@@ -11,7 +11,7 @@ static int m = 1, // number of dependent variables
            n = 6; // number of independent variables
 
 #include "nh-common.h"
-#include "nh-adolc.hpp"
+#include "nh-adolc.h"
 
 
 
