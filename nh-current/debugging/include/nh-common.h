@@ -226,3 +226,29 @@ void PushForward_symmetric(double Grad_u[3][3], double A_sym[6], double a_sym[6]
   MatMatTransposeMult(F_A, F, a);
   SymmetricMatPack(a, a_sym);
 };
+
+void MatTransposeMatMult(double alpha, const double A[3][3], const double B[3][3], double C[3][3]) {
+  for (int j = 0; j < 3; j++) {
+    for (int k = 0; k < 3; k++) {
+      C[j][k] = 0;
+      for (int m = 0; m < 3; m++) {
+        C[j][k] += alpha * A[m][j] * B[m][k];
+      }
+    }
+  }
+}
+
+// E = .5(F^t F - I) not the pull-back operator
+void Compute_E_symmetric(double Grad_u[3][3], double E_sym[6]) {
+  // F = I + Grad_u
+  const double F[3][3] = {
+    {Grad_u[0][0] + 1, Grad_u[0][1],     Grad_u[0][2]    },
+    {Grad_u[1][0],     Grad_u[1][1] + 1, Grad_u[1][2]    },
+    {Grad_u[2][0],     Grad_u[2][1],     Grad_u[2][2] + 1}
+  };
+  double E[3][3];
+  MatTransposeMatMult(1., F, F, E);
+  for (int i=0; i<3; i++) E[i][i] -= 1.;
+  for (int i=0; i<3; i++) for (int j=0; j<3; j++) E[i][j] /= 2.;
+  SymmetricMatPack(E, E_sym);
+}
