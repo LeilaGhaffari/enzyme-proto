@@ -7,8 +7,8 @@
 #include <adolc/adolc.h>
 
 using namespace std;
-static int m = 1, // number of dependent variables
-           n = 6; // number of independent variables
+static int m = 1, //number of dependent variables
+           n = 6; //number of independent variables
 
 #include "../include/ratel-nh-initial.hpp"
 #include "../include/ratel-nh-initial-adolc.hpp"
@@ -18,22 +18,44 @@ static int m = 1, // number of dependent variables
 int main() {
   const double mu = 1., lambda = 1.;
 
-  // Green Lagrange Strain Tensor: E
-  double E_sym[6];
-  E_sym[0] = 0.119405838995;
-  E_sym[1] = 0.022906026341;
-  E_sym[2] = 0.038223518388;
-  E_sym[3] = 0.037745222581;
-  E_sym[4] = 0.185032644972;
-  E_sym[5] = 0.068185405852;
+  double grad_u[3][3] = {
+    {0.0702417, 0.4799115, 0.3991242},
+    {0.6756593, 0.0633284, 0.0959267},
+    {0.2241923, 0.0281781, 0.0917613}
+  };
 
-  double dE_sym[6];
-  dE_sym[0] = 0.360249242839;
-  dE_sym[1] = 0.414569769236;
-  dE_sym[2] = -0.02167824525;
-  dE_sym[3] = 0.158595277365;
-  dE_sym[4] = 0.060981222528;
-  dE_sym[5] = 0.186598372502;
+  double grad_delta_u[3][3] = {
+    {0.1425560,  0.115120,  0.551640},
+    {0.0591922,  0.123535,  0.166572},
+    {0.1617210,  0.478828,  0.646217}
+  };
+
+  // Compute the Deformation Gradient : F = I + grad_u
+  const double F[3][3] = {
+    {grad_u[0][0] + 1, grad_u[0][1],     grad_u[0][2]    },
+    {grad_u[1][0],     grad_u[1][1] + 1, grad_u[1][2]    },
+    {grad_u[2][0],     grad_u[2][1],     grad_u[2][2] + 1}
+  };
+
+  const double temp_grad_u[3][3] = {
+    {grad_u[0][0], grad_u[0][1], grad_u[0][2]},
+    {grad_u[1][0], grad_u[1][1], grad_u[1][2]},
+    {grad_u[2][0], grad_u[2][1], grad_u[2][2]}
+  };
+
+  // deltaE - Green-Lagrange strain tensor
+  const int ind_j[n] = {0, 1, 2, 1, 0, 0}, ind_k[n] = {0, 1, 2, 2, 2, 1};
+  double    dE_sym[n];
+  for (int mm = 0; mm < n; mm++) {
+    dE_sym[mm] = 0;
+    for (int nn = 0; nn < 3; nn++) {
+      dE_sym[mm] += (grad_delta_u[nn][ind_j[mm]] * F[nn][ind_k[mm]] + F[nn][ind_j[mm]] * grad_delta_u[nn][ind_k[mm]]) / 2.;
+    }
+  }
+
+  // Green Lagrange Strain Tensor: E
+  double E_sym[n];
+  GreenLagrangeStrain(temp_grad_u, E_sym);
 
   // ------------------------------------------------------------------------
   // Automatic Differentiation
@@ -71,7 +93,7 @@ int main() {
 }
 
 /*
-  Strain energy = 0.922656758772
+ Strain energy = 0.919759028041
 
   S (ADOL-C gradient):
 
