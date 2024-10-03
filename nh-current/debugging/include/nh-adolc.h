@@ -21,7 +21,7 @@ adouble Log1pSeries(adouble x) {
     return 2 * sum;
 };
 
-adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
+adouble StrainEnergy_ADOLC(adouble E_sym[6], const double lambda, const double mu) {
   adouble E2_sym[6];
 
   // J and log(J)
@@ -44,7 +44,7 @@ void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const dou
   auto Fp = new double[m];
   trace_on(tag); // Start tracing floating point operations
   for (int i=0; i<n; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
-  Fa[0] = StrainEnergy(Ea, lambda, mu); // Evaluate the body of the differentiated code
+  Fa[0] = StrainEnergy_ADOLC(Ea, lambda, mu); // Evaluate the body of the differentiated code
   Fa[0] >>= Fp[0]; // Assign dXpendent variables
   trace_off();    // End of the active section
 
@@ -61,7 +61,7 @@ void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, con
     adouble* Fa = new adouble[m];
     trace_on(tag);
     for (int i=0; i<n; i++) Xa[i] <<= Xp[i];
-    Fa[0] = StrainEnergy(Xa, lambda, mu);
+    Fa[0] = StrainEnergy_ADOLC(Xa, lambda, mu);
     Fa[0] >>= Fp[0];
     trace_off();
 

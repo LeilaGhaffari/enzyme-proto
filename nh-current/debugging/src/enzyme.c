@@ -70,6 +70,9 @@ int main() {
   // ------------------------------------------------------------------------
   // More info for debugging
   // ------------------------------------------------------------------------
+  printf("\n\ne =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", e_sym[i]);
+
   double E_sym[6];
   Compute_E_symmetric(Grad_u, E_sym);
   printf("\n\nE =");
@@ -99,6 +102,9 @@ int main() {
   PushForward_symmetric(Grad_u, S_sym_ad, tau_sym_pf);
   printf("\n\ntau from push-forward =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym_pf[i]);
+
+  printf("\n\nde =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", de_sym[i]);
 
   // Grad_du = ddu/dX * dX/dx_initial
   double Grad_du[3][3], dE_sym[6];
@@ -131,6 +137,14 @@ int main() {
 }
 
 /*
+e =
+        0.245019612050
+        0.050858346002
+        0.307230477361
+        0.125320141114
+        0.365707271890
+        0.126198905768
+
 E =
         0.356722230881
         0.053880729108
@@ -174,6 +188,14 @@ tau from push-forward =
         0.731414543779
         0.252397811536
 
+de =
+        0.594073472562
+        0.520846110579
+        0.197688936164
+        0.375403844308
+        0.357021134303
+        0.356184921415
+
 dE =
         0.705072432429
         0.479848109568
@@ -212,4 +234,5 @@ dtau from push-forward =
         1.869278025008
         0.750807688616
         0.714042268606
+        0.712369842831
 */
