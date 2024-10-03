@@ -210,6 +210,43 @@ void PullBack_symmetric(double Grad_u[3][3], double a_sym[6], double A_sym[6]) {
   SymmetricMatPack(A, A_sym);
 };
 
+void dPullBack_symmetric(double F_inv[3][3], double dF[3][3], double a_sym[6], double da_sym[6], double dA_sym[6]) {
+  // F = I + Grad_u => dF = Grad_du
+  // F_inv * F = I => dF_inv * F + F_inv * dF = 0 => dF_inv = -F_inv * dF * F_inv
+  // A = F_inv * a * F_inv^T => da = F_inv da F_inv^T + dF_inv a F_inv^T + F_inv a dF_inv^T
+  double a[3][3], da[3][3];
+  SymmetricMatUnpack(da_sym, da);
+  SymmetricMatUnpack(a_sym, a);
+
+  // dF_inv = -F_inv * dF * F_inv
+  double F_inv_dF[3][3], dF_inv[3][3];
+  MatMatMult(-1., F_inv, dF, F_inv_dF);
+  MatMatMult(1., F_inv_dF, F_inv, dF_inv);
+
+  // F_inv da F_inv^T
+  double F_inv_da[3][3], F_inv_da_F_inv_T[3][3];
+  MatMatMult(1., F_inv, da, F_inv_da);
+  MatMatTransposeMult(F_inv_da, F_inv, F_inv_da_F_inv_T);
+
+  // dF_inv a F_inv^T
+  double dF_inv_a[3][3], dF_inv_a_F_inv_T[3][3];
+  MatMatMult(1., dF_inv, a, dF_inv_a);
+  MatMatTransposeMult(dF_inv_a, F_inv, dF_inv_a_F_inv_T);
+
+  // F_inv a dF_inv^T
+  double F_inv_a[3][3], F_inv_a_dF_inv_T[3][3];
+  MatMatMult(1., F_inv, a, F_inv_a);
+  MatMatTransposeMult(F_inv_a, dF_inv, F_inv_a_dF_inv_T);
+
+  // da = F_inv da F_inv^T + dF_inv a F_inv^T + F_inv a dF_inv^T
+  double dA[3][3] = {{0.}};
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      dA[i][j] = F_inv_da_F_inv_T[i][j] + dF_inv_a_F_inv_T[i][j] + F_inv_a_dF_inv_T[i][j];
+
+  SymmetricMatPack(dA, dA_sym);
+};
+
 void PushForward_symmetric(double Grad_u[3][3], double A_sym[6], double a_sym[6]) {
   // F = I + Grad_u
   const double F[3][3] = {
@@ -252,6 +289,7 @@ void dPushForward_symmetric(double F[3][3], double dF[3][3], double A_sym[6], do
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       da[i][j] = F_dA_FT[i][j] + dF_A_FT[i][j] + F_A_dFT[i][j];
+
   SymmetricMatPack(da, da_sym);
 };
 

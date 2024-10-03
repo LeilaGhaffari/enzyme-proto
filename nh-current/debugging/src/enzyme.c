@@ -117,24 +117,53 @@ int main() {
   printf("\n\ndS from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_ad[i]);
 
-  double dtau_sym_pf[6];
+  double dS_sym_pb[6] = {0.};
+  dPullBack_symmetric(F_inv, Grad_du, tau_sym, dtau_sym, dS_sym_pb);
+  printf("\n\ndS from pull-back =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_pb[i]);
+
+  printf("\n\ndtau from AD =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym[i]);
+
+  double dtau_sym_pf[6]; // note: we don't use S_sym_ad here since it changed with dS_fwd_Enzyme()
   dPushForward_symmetric(F, Grad_du, S_sym_pb, dS_sym_ad, dtau_sym_pf);
   printf("\n\ndtau from push-forward =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym_pf[i]);
 
-  printf("\n\ndtau from AD =");
-  for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym[i]);
   printf("\n\n");
-
   return 0;
 }
 
 /*
 
-Strain Energy =  0.338798
+E =
+        0.356722230881
+        0.053880729108
+        0.192505475424
+        0.105608348553
+        0.355594178128
+        0.150573971552
 
-tau =
+Strain Energy from e =  0.338798323727
+Strain Energy from E =  0.338798323727
 
+S from AD =
+        0.603042145694
+        0.502393311590
+        0.518369381113
+        0.039368083122
+        0.192988146562
+        0.071117045859
+
+S from pull-back =
+        0.603042145694
+        0.502393311590
+        0.518369381113
+        0.039368083122
+        0.192988146562
+        0.071117045859
+
+tau from AD =
         0.968541661897
         0.580219129800
         1.092963392519
@@ -142,13 +171,50 @@ tau =
         0.731414543779
         0.252397811536
 
+tau from push-forward =
+        0.968541661897
+        0.580219129800
+        1.092963392519
+        0.250640282229
+        0.731414543779
+        0.252397811536
 
-dtau =
+dE =
+        0.705072432429
+        0.479848109568
+        0.127687977309
+        0.263932661797
+        0.307099644410
+        0.338054016477
 
+dS from AD =
+        1.349682793048
+        1.751663099730
+        1.340753124766
+        -0.027597262846
+        -0.553363888159
+        -0.172700195711
+
+dS from pull-back =
+        1.349682793048
+        1.751663099730
+        1.340753124766
+        -0.027597262846
+        -0.553363888159
+        -0.172700195711
+
+dtau from AD =
         2.662047097805
         2.515592373839
         1.869278025008
         0.750807688616
         0.714042268606
         0.712369842831
+
+dtau from push-forward =
+        2.662047097805
+        2.515592373839
+        1.869278025008
+        0.750807688616
+        0.714042268606
 */
