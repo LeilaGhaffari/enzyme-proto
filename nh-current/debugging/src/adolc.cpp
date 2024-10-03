@@ -127,7 +127,7 @@ int main() {
   printf("\nStrain Energy from E = ");
   printf(" %.12lf", StrainEnergy(E_sym, lambda, mu));
 
-  // S = dPsi/dE with Enzyme-AD
+  // S = dPsi/dE with ADOLC
   double S_sym_ad[6];
   auto Ep = new double[n];
   for (int i=0; i<n; i++) Ep[i] = E_sym[i];
@@ -158,6 +158,10 @@ int main() {
   printf("\n\ndE =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
 
+  double dPsi_ = 0.; // (dPsi/de : de) is not equal to (dPsi/dE : dE)
+  for (int i=0; i<n; i++) dPsi_ += S_sym_pb[i] * dE_sym[i];
+  printf("\n\n dPsi from current %.12lf \n dPsi from initial %.12lf", dPsi, dPsi_);
+
   // dS = dS/dE with ADOLC
   double dS_sym_ad[6];
   double hessPsi_init[6][6] = {{0.}};
@@ -174,8 +178,8 @@ int main() {
   printf("\n\ndtau from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym[i]);
 
-  double dtau_sym_pf[6]; // note: we don't use S_sym_ad here since it changed with dS_fwd_Enzyme()
-  dPushForward_symmetric(F, Grad_du, S_sym_pb, dS_sym_ad, dtau_sym_pf);
+  double dtau_sym_pf[6];
+  dPushForward_symmetric(F, Grad_du, S_sym_ad, dS_sym_ad, dtau_sym_pf);
   printf("\n\ndtau from push-forward =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym_pf[i]);
 
