@@ -163,21 +163,19 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
   return 0;
 }
 
-double StrainEnergy(double E_sym[6], const double lambda, const double mu) {
-  // Calculate 2*E
-  double E2_sym[6];
-  for(int i = 0; i<6; i++) E2_sym[i] = E_sym[i] * 2;
+double StrainEnergy(double e_sym[6], const double lambda, const double mu) {
+  double e2_sym[6];
 
-  // log(J)
-  double detCm1 = MatDetAM1Symmetric(E2_sym);
+  // J and log(J)
+  for (int i = 0; i < 6; i++) e2_sym[i] = 2 * e_sym[i];
+  const double detbm1 = MatDetAM1Symmetric(e2_sym);
+  const double J      = sqrt(detbm1 + 1);
+  const double logJ   = Log1pSeries(detbm1) / 2.;
 
-  //double J      = sqrt(detCm1 + 1);
-  double logJ   = Log1pSeries(detCm1) / 2.;
+  // trace(e)
+  const double trace_e = MatTraceSymmetric(e_sym);
 
-  // trace(E)
-  double traceE = MatTraceSymmetric(E_sym);
-
-  return lambda*logJ*logJ/2  + mu * (-logJ + traceE);
+  return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + trace_e);
 };
 
 int MatMatTransposeMult(const double A[3][3], const double B[3][3], double C[3][3]) {
@@ -227,6 +225,36 @@ void PushForward_symmetric(double Grad_u[3][3], double A_sym[6], double a_sym[6]
   SymmetricMatPack(a, a_sym);
 };
 
+void dPushForward_symmetric(double F[3][3], double dF[3][3], double A_sym[6], double dA_sym[6], double da_sym[6]) {
+  // F = I + Grad_u => dF = Grad_du
+  // a = F * A * F^T => da = F dA F^T + dF A F^T + F A dF^T
+  double A[3][3], dA[3][3];
+  SymmetricMatUnpack(dA_sym, dA);
+  SymmetricMatUnpack(A_sym, A);
+
+  // F dA F^T
+  double F_dA[3][3], F_dA_FT[3][3];
+  MatMatMult(1., F, dA, F_dA);
+  MatMatTransposeMult(F_dA, F, F_dA_FT);
+
+  // dF A F^T
+  double dF_A[3][3], dF_A_FT[3][3];
+  MatMatMult(1., dF, A, dF_A);
+  MatMatTransposeMult(dF_A, F, dF_A_FT);
+
+  // F A dF^T
+  double F_A[3][3], F_A_dFT[3][3];
+  MatMatMult(1., F, A, F_A);
+  MatMatTransposeMult(F_A, dF, F_A_dFT);
+
+  // da = F dA F^T + dF A F^T + F A dF^T
+  double da[3][3] = {{0.}};
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      da[i][j] = F_dA_FT[i][j] + dF_A_FT[i][j] + F_A_dFT[i][j];
+  SymmetricMatPack(da, da_sym);
+};
+
 void MatTransposeMatMult(double alpha, const double A[3][3], const double B[3][3], double C[3][3]) {
   for (int j = 0; j < 3; j++) {
     for (int k = 0; k < 3; k++) {
@@ -252,3 +280,14 @@ void Compute_E_symmetric(double Grad_u[3][3], double E_sym[6]) {
   for (int i=0; i<3; i++) for (int j=0; j<3; j++) E[i][j] /= 2.;
   SymmetricMatPack(E, E_sym);
 }
+
+void RatelGreenLagrangeStrain_fwd(const double grad_du[3][3], const double F[3][3], double dE_sym[6]) {
+  const int ind_j[6] = {0, 1, 2, 1, 0, 0}, ind_k[6] = {0, 1, 2, 2, 2, 1};
+
+  for (int m = 0; m < 6; m++) {
+    dE_sym[m] = 0;
+    for (int n = 0; n < 3; n++) {
+      dE_sym[m] += (grad_du[n][ind_j[m]] * F[n][ind_k[m]] + F[n][ind_j[m]] * grad_du[n][ind_k[m]]) / 2.;
+    }
+  }
+};

@@ -16,6 +16,7 @@ int main() {
     {0.1617210,  0.478828,  0.646217}
   };
 
+  // Grad_u = du/dx_initial = du/dX * dX/dx_initial
   double Grad_u[3][3];
   MatMatMult(1.0, dudX, dXdx_initial, Grad_u);
 
@@ -34,7 +35,7 @@ int main() {
   MatInverse(F, detF, F_inv);
 
   // x is current config coordinate system
-  // dXdx = dX/dx = dX/dx_initial * F^{-1}
+  // dXdx = dX/dx_current = dX/dx_initial * F^{-1}
   // Note that F^{-1} = dx_initial/dx
   double dXdx[3][3];
   MatMatMult(1.0, dXdx_initial, F_inv, dXdx);
@@ -51,7 +52,6 @@ int main() {
   tau_sym_Enzyme(lambda, mu, e_sym, tau_sym);
 
   // Compute grad_du = ddu/dX * dX/dx
-  // X is ref coordinate [-1,1]^3; x is physical coordinate in current configuration
   double grad_du[3][3];
   double ddudX[3][3] = {
       {0.23617975,  0.60250516,  0.1717169},
@@ -82,10 +82,10 @@ int main() {
   for (int i=0; i<6; i++) printf("\n\t%.12lf", E_sym[i]);
 
   printf("\n\nStrain Energy from e = ");
-  printf(" %.12lf", StrainEnergy_Enzyme(e_sym, lambda, mu));
+  printf(" %.12lf", StrainEnergy(e_sym, lambda, mu));
 
   printf("\nStrain Energy from E = ");
-  printf(" %.12lf", StrainEnergy_Enzyme(E_sym, lambda, mu));
+  printf(" %.12lf", StrainEnergy(E_sym, lambda, mu));
 
   double S_sym_ad[6];
   S_sym_Enzyme(lambda, mu, E_sym, S_sym_ad);
@@ -101,19 +101,26 @@ int main() {
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym[i]);
 
   double tau_sym_pf[6];
-  PushForward_symmetric(Grad_u,  S_sym_ad, tau_sym_pf);
+  PushForward_symmetric(Grad_u, S_sym_ad, tau_sym_pf);
   printf("\n\ntau from push-forward =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym_pf[i]);
 
-  double dE_sym[6];
-  PullBack_symmetric(Grad_u, de_sym, dE_sym); // TODO (this is not correct)
-  //printf("\n\ndE from pull-back =");
-  //for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
+  // Compute Grad_du = ddu/dX * dX/dx_initial
+  double Grad_du[3][3], dE_sym[6];
+  MatMatMult(1.0, ddudX, dXdx_initial, Grad_du);
+  RatelGreenLagrangeStrain_fwd(Grad_du, F, dE_sym);
+  printf("\n\ndE =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
 
   double dS_sym_ad[6];
   dS_fwd_Enzyme(lambda, mu, E_sym, dE_sym, S_sym_ad, dS_sym_ad);
-  //printf("\n\ndS from AD =");
-  //for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_ad[i]);
+  printf("\n\ndS from AD =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dS_sym_ad[i]);
+
+  double dtau_sym_pf[6];
+  dPushForward_symmetric(F, Grad_du, S_sym_pb, dS_sym_ad, dtau_sym_pf);
+  printf("\n\ndtau from push-forward =");
+  for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym_pf[i]);
 
   printf("\n\ndtau from AD =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dtau_sym[i]);
