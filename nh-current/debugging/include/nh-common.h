@@ -262,7 +262,7 @@ void PushForward_symmetric(double Grad_u[3][3], double A_sym[6], double a_sym[6]
   SymmetricMatPack(a, a_sym);
 };
 
-void dPushForward_symmetric(double F[3][3], double dF[3][3], double A_sym[6], double dA_sym[6], double da_sym[6]) {
+void dPushForward_symmetric(const double F[3][3], double dF[3][3], double A_sym[6], double dA_sym[6], double da_sym[6]) {
   // F = I + Grad_u => dF = Grad_du
   // a = F * A * F^T => da = F dA F^T + dF A F^T + F A dF^T
   double A[3][3], dA[3][3];

@@ -58,10 +58,9 @@ int main() {
   cout.precision(12);
   cout.setf(ios::fixed);
   cout << "\n Strain energy = " << StrainEnergy(E_sym, lambda, mu) << endl;
-  cout << "\n  S (ADOL-C gradient):" << endl << endl;
+  cout << "\n  S (ADOL-C gradient):" << endl;
   for (int i=0; i<n; i++) cout << "\t" << S_sym[i] << endl;
-  cout << endl;
-  cout << "\n dS (ADOL-C hessian) =" << endl << endl;
+  cout << "\n dS (ADOL-C hessian) =" << endl;
   for (int i=0; i<n; i++) cout << "\t" << dS[i] << endl;
   cout << endl;
 
@@ -69,11 +68,9 @@ int main() {
 }
 
 /*
-
  Strain energy = 0.338798323728
 
   S (ADOL-C gradient):
-
         0.603043653441
         0.502395201627
         0.518371210470
@@ -81,9 +78,7 @@ int main() {
         0.192987413544
         0.071116775739
 
-
  dS (ADOL-C hessian) =
-
         1.349719621895
         1.751709039535
         1.340798936767
