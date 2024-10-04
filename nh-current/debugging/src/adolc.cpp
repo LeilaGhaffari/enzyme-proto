@@ -94,11 +94,12 @@ int main() {
   ComputeHessianPsi(hessPsi_curr, e_p, lambda, mu);
 
   // dGradPsi = hessPsi : de
-  double dGradPsi[3][3], dGradPsi_sym[6] = {0.}, dtau_1[3][3];
+  double dGradPsi[3][3], dGradPsi_sym[6] = {0.};
   for (int i=0; i<n; i++) for (int j=0; j<n; j++) dGradPsi_sym[i] += hessPsi_curr[i][j] * de_sym[j];
   SymmetricMatUnpack(dGradPsi_sym, dGradPsi);
 
   // dtau_1 = dGradPsi b
+  double dtau_1[3][3];
   MatMatMult(1.0, dGradPsi, b, dtau_1);
 
   // dtau_2 = 2 (gradPsi * de ) : de
