@@ -64,31 +64,26 @@ void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const dou
   for (int i=0; i<6; i++) if (i>2) grad[i] /= 2.;
 };
 
-void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, const double mu) {
+void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, const double mu, HessianData *data) {
     // Active section for AD
     int tag = 1;
-    auto Fp = new double[1];
-    adouble* Xa = new adouble[6];
-    adouble* Fa = new adouble[1];
     trace_on(tag);
-    for (int i=0; i<6; i++) Xa[i] <<= Xp[i];
-    Fa[0] = StrainEnergy(Xa, lambda, mu);
-    Fa[0] >>= Fp[0];
+    for (int i = 0; i < 6; i++) {
+        data->Xa[i] <<= Xp[i];
+    }
+    data->Fa[0] = StrainEnergy(data->Xa, lambda, mu);
+    data->Fa[0] >>= data->Fp[0];
     trace_off();
 
-    // Allocate data array for the lower half of the hessian matrix
-    double **H = (double **)malloc(6 * sizeof(double *));
-    for(int i=0; i<6; i++) H[i] = (double *)malloc((i+1) * sizeof(double));
-
     // Compute the hessian matrix
-    hessian(tag, 6, Xp, H);
+    hessian(tag, 6, Xp, data->H);
 
     // Populate hess
     for (int i=0; i<6; i++) {
       for (int j=0; j<i+1; j++) {
-        hess[i][j] = H[i][j];
+        hess[i][j] = data->H[i][j];
         if (i != j) hess[j][i] = hess[i][j];
       }
     }
     for (int i=3; i<6; i++) for (int j=0; j<6; j++) hess[i][j] /= 2.;
-};
+}

@@ -5,8 +5,9 @@
 #include <adolc/adolc.h>
 
 
-#include "ratel-nh-initial.hpp"
-#include "ratel-nh-initial-adolc.hpp"
+#include "nh-initial.hpp"
+#include "utils.hpp"
+#include "nh-initial-adolc.hpp"
 
 static const double mu = 1., lambda = 1.;
 
@@ -37,10 +38,11 @@ void f1_NeoHookeanInitial_AD_ADOLC(double dudX[3][3], double dXdx[3][3], double 
   MatMatMult(1.0, F, S, f1);
 }
 
-void df1_NeoHookeanInitial_AD_ADOLC(double dXdx[3][3], double ddudX[3][3], double stored_grad_u[3][3],
+void df1_NeoHookeanInitial_AD_ADOLC(void *ctx, double dXdx[3][3], double ddudX[3][3], double stored_grad_u[3][3],
                                     double stored_S_sym[6], double df1[3][3]) {
 
   double grad_du[3][3], E_sym[6], dE_sym[6], dS_sym[6], dS[3][3], S[3][3];
+  HessianData *data = static_cast<HessianData *>(ctx);
 
   // Compute grad_du = ddu/dX * dX/dx
   MatMatMult(1.0, ddudX, dXdx, grad_du);
@@ -62,7 +64,7 @@ void df1_NeoHookeanInitial_AD_ADOLC(double dXdx[3][3], double ddudX[3][3], doubl
   auto Ep = new double[6];
   for (int i=0; i<6; i++) Ep[i] = E_sym[i];
   double hessPsi[6][6] = {{0.}};
-  ComputeHessianPsi(hessPsi, Ep, lambda, mu);
+  ComputeHessianPsi(hessPsi, Ep, lambda, mu, data);
   for (int i=0; i<6; i++) {
     dS_sym[i] = 0.;
     for (int j=0; j<6; j++) dS_sym[i] += hessPsi[i][j] * dE_sym[j];

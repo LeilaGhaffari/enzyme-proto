@@ -26,7 +26,12 @@ int main() {
   };
 
   double df1[3][3];
-  df1_NeoHookeanInitial_AD_ADOLC(dXdx, ddudX, stored_grad_u, stored_S_sym, df1);
+  HessianData *data = new HessianData;
+  initializeHessianData(data);
+  df1_NeoHookeanInitial_AD_ADOLC(data, dXdx, ddudX, stored_grad_u, stored_S_sym, df1);
+
+  // Free allocated memory
+  freeHessianData(data);
 
   return 0;
 }
