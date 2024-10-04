@@ -50,45 +50,45 @@ adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
 void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const double mu) {
   // Active section for AD
   int tag = 1;
-  auto Ea = new adouble[n];
-  auto Fa = new adouble[m];
-  auto Fp = new double[m];
+  auto Ea = new adouble[6];
+  auto Fa = new adouble[1];
+  auto Fp = new double[1];
   trace_on(tag); // Start tracing floating point operations
-  for (int i=0; i<n; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
+  for (int i=0; i<6; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
   Fa[0] = StrainEnergy(Ea, lambda, mu); // Evaluate the body of the differentiated code
   Fa[0] >>= Fp[0]; // Assign dXpendent variables
   trace_off();    // End of the active section
 
   // Compute the gradient
-  gradient(tag, n, Xp, grad);
-  for (int i=0; i<n; i++) if (i>2) grad[i] /= 2.;
+  gradient(tag, 6, Xp, grad);
+  for (int i=0; i<6; i++) if (i>2) grad[i] /= 2.;
 };
 
 void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, const double mu) {
     // Active section for AD
     int tag = 1;
-    auto Fp = new double[m];
-    adouble* Xa = new adouble[n];
-    adouble* Fa = new adouble[m];
+    auto Fp = new double[1];
+    adouble* Xa = new adouble[6];
+    adouble* Fa = new adouble[1];
     trace_on(tag);
-    for (int i=0; i<n; i++) Xa[i] <<= Xp[i];
+    for (int i=0; i<6; i++) Xa[i] <<= Xp[i];
     Fa[0] = StrainEnergy(Xa, lambda, mu);
     Fa[0] >>= Fp[0];
     trace_off();
 
     // Allocate data array for the lower half of the hessian matrix
-    double **H = (double **)malloc(n * sizeof(double *));
-    for(int i=0; i<n; i++) H[i] = (double *)malloc((i+1) * sizeof(double));
+    double **H = (double **)malloc(6 * sizeof(double *));
+    for(int i=0; i<6; i++) H[i] = (double *)malloc((i+1) * sizeof(double));
 
     // Compute the hessian matrix
-    hessian(tag, n, Xp, H);
+    hessian(tag, 6, Xp, H);
 
     // Populate hess
-    for (int i=0; i<n; i++) {
+    for (int i=0; i<6; i++) {
       for (int j=0; j<i+1; j++) {
         hess[i][j] = H[i][j];
         if (i != j) hess[j][i] = hess[i][j];
       }
     }
-    for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) hess[i][j] /= 2.;
+    for (int i=0; i<6; i++) for (int j=0; j<6; j++) if (i > 2) hess[i][j] /= 2.;
 };
