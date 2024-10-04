@@ -329,3 +329,13 @@ void RatelGreenLagrangeStrain_fwd(const double grad_du[3][3], const double F[3][
     }
   }
 };
+
+// `C = alpha A + beta B` for 3x3 matrices
+int MatMatAdd(double alpha, const double A[3][3], double beta, const double B[3][3], double C[3][3]) {
+  for (int j = 0; j < 3; j++) {
+    for (int k = 0; k < 3; k++) {
+      C[j][k] = alpha * A[j][k] + beta * B[j][k];
+    }
+  }
+  return 0;
+}

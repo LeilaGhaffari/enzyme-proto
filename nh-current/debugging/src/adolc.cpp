@@ -85,29 +85,30 @@ int main() {
   MatMatMult(1.0, ddudX, dXdx, grad_du);
 
   // de = db / 2 = (grad_du b + b (grad_du)^T) / 2
-  double de_sym[6];
+  double de_sym[6], de[3][3];
   GreenEulerStrain_fwd(grad_du, b, de_sym);
+  SymmetricMatUnpack(de_sym, de);
 
-  // -- dtau with ADOLC
-  // the hessian of Psi (d2Psi/de2)
+  // The hessian of Psi (d2Psi/de2) with ADOLC
   double hessPsi_curr[6][6] = {{0.}};
   ComputeHessianPsi(hessPsi_curr, e_p, lambda, mu);
 
   // dGradPsi = hessPsi : de
-  double dGradPsi[3][3], dGradPsi_sym[6] = {0.};
+  double dGradPsi[3][3], dGradPsi_sym[6] = {0.}, dtau_1[3][3];
   for (int i=0; i<n; i++) for (int j=0; j<n; j++) dGradPsi_sym[i] += hessPsi_curr[i][j] * de_sym[j];
   SymmetricMatUnpack(dGradPsi_sym, dGradPsi);
 
-  // Compute dPsi = gradPsi : de
-  double dPsi = 0.;
-  for (int i=0; i<n; i++) dPsi += gradPsi_sym[i] * de_sym[i];
+  // dtau_1 = dGradPsi b
+  MatMatMult(1.0, dGradPsi, b, dtau_1);
 
-  // Compute dtau
-  // tau = gradPsi * b => Jac_tau = dtau/de = d(gradPsi * b)/de = hessPsi * b + 2 gradPsi * I
-  // dtau = Jac_tau : de = b * (hessPsi : de) + 2 (gradPsi : de) * I = b * dGradPsi + 2 dPsi * I
+  // dtau_2 = 2 (gradPsi * de ) : de
+  double gradPsi_de[3][3], dtau_2[3][3];
+  MatMatMult(2., gradPsi, de, gradPsi_de);
+  for (int i=0; i<3; i++) for (int j=0; j<3; j++) dtau_2[i][j] = gradPsi_de[i][j] * de[i][j];
+
+  // dtau = dtau_1 + dtau_2 (TODO: all members are ~.3 smaller!)
   double dtau[3][3], dtau_sym[6];
-  MatMatMult(1.0, b, dGradPsi, dtau);
-  for (int i=0; i<3; i++) dtau[i][i] += 2. * dPsi;
+  MatMatAdd(1., dtau_1, 1., dtau_2, dtau);
   SymmetricMatPack(dtau, dtau_sym);
 
   // ------------------------------------------------------------------------
@@ -158,10 +159,6 @@ int main() {
   printf("\n\ndE =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", dE_sym[i]);
 
-  double dPsi_ = 0.; // (dPsi/de : de) is not equal to (dPsi/dE : dE)
-  for (int i=0; i<n; i++) dPsi_ += S_sym_pb[i] * dE_sym[i];
-  printf("\n\n dPsi from current %.12lf \n dPsi from initial %.12lf", dPsi, dPsi_);
-
   // dS = dS/dE with ADOLC
   double dS_sym_ad[6];
   double hessPsi_init[6][6] = {{0.}};
@@ -186,23 +183,3 @@ int main() {
   printf("\n\n");
   return 0;
 }
-
-/*
- Strain energy = 0.338798323728
-
-  S (ADOL-C gradient):
-        0.603043653441
-        0.502395201627
-        0.518371210470
-        0.039367933591
-        0.192987413544
-        0.071116775739
-
- dS (ADOL-C hessian) =
-        1.349719621895
-        1.751709039535
-        1.340798936767
-        -0.027601318916
-        -0.553382183654
-        -0.172707056259
-*/
