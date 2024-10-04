@@ -56,22 +56,25 @@ int main() {
   // ------------------------------------------------------------------------
   // Automatic Differentiation
   // ------------------------------------------------------------------------
+    double gradPsi_sym[6] = {0.}, gradPsi[3][3], hessPsi_curr[6][6] = {{0.}};
   // Initialize passive variables
   auto e_p = new double[n];
   for (int i=0; i<n; i++) e_p[i] = e_sym[i];
 
-  // gradPsi = dPsi/de with ADOLC
-  double gradPsi_sym[6] = {0.}, gradPsi[3][3];
-  ComputeGradPsi(gradPsi_sym, e_p, lambda, mu);
-  SymmetricMatUnpack(gradPsi_sym, gradPsi);
+  // ADOL-C
+  ComputeGradPsi(gradPsi_sym, e_p, lambda, mu); // gradient: dPsi/de
+  ComputeHessianPsi(hessPsi_curr, e_p, lambda, mu); // hessian: d2Psi/de2
+  // ------------------------------------------------------------------------
+  // ------------------------------------------------------------------------
 
   // b = 2 e + I
   double b_sym[6], b[3][3];
-  for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_p[j] + (j < 3);
+  for (int j = 0; j < 6; j++) b_sym[j] = 2. * e_sym[j] + (j < 3);
   SymmetricMatUnpack(b_sym, b);
 
   // tau = dPsi/de * b
   double tau_sym[6], tau[3][3];
+  SymmetricMatUnpack(gradPsi_sym, gradPsi);
   MatMatMult(1.0, gradPsi, b, tau);
   SymmetricMatPack(tau, tau_sym);
 
@@ -89,10 +92,6 @@ int main() {
   GreenEulerStrain_fwd(grad_du, b, de_sym);
   SymmetricMatUnpack(de_sym, de);
 
-  // The hessian of Psi (d2Psi/de2) with ADOLC
-  double hessPsi_curr[6][6] = {{0.}};
-  ComputeHessianPsi(hessPsi_curr, e_p, lambda, mu);
-
   // dGradPsi = hessPsi : de
   double dGradPsi[3][3], dGradPsi_sym[6] = {0.};
   for (int i=0; i<n; i++) for (int j=0; j<n; j++) dGradPsi_sym[i] += hessPsi_curr[i][j] * de_sym[j];
@@ -102,12 +101,11 @@ int main() {
   double dtau_1[3][3];
   MatMatMult(1.0, dGradPsi, b, dtau_1);
 
-  // dtau_2 = 2 (gradPsi * de ) : de
-  double gradPsi_de[3][3], dtau_2[3][3];
-  MatMatMult(2., gradPsi, de, gradPsi_de);
-  for (int i=0; i<3; i++) for (int j=0; j<3; j++) dtau_2[i][j] = gradPsi_de[i][j] * de[i][j];
+  // dtau_2 = 2 gradPsi de
+  double dtau_2[3][3];
+  MatMatMult(2., gradPsi, de, dtau_2);
 
-  // dtau = dtau_1 + dtau_2 (TODO: all members are ~.3 smaller!)
+  // dtau = dtau_1 + dtau_2
   double dtau[3][3], dtau_sym[6];
   MatMatAdd(1., dtau_1, 1., dtau_2, dtau);
   SymmetricMatPack(dtau, dtau_sym);
@@ -184,3 +182,104 @@ int main() {
   printf("\n\n");
   return 0;
 }
+
+/*
+e =
+        0.245019612050
+        0.050858346002
+        0.307230477361
+        0.125320141114
+        0.365707271890
+        0.126198905768
+
+E =
+        0.356722230881
+        0.053880729108
+        0.192505475424
+        0.105608348553
+        0.355594178128
+        0.150573971552
+
+Strain Energy from e =  0.338798323727
+Strain Energy from E =  0.338798323727
+
+S from AD =
+        0.603043653442
+        0.502395201627
+        0.518371210470
+        0.039367933592
+        0.192987413544
+        0.071116775739
+
+S from pull-back =
+        0.603043653442
+        0.502395201627
+        0.518371210470
+        0.039367933592
+        0.192987413544
+        0.071116775739
+
+tau from AD =
+        0.968543642678
+        0.580221110582
+        1.092965373300
+        0.250640282229
+        0.731414543779
+        0.252397811536
+
+tau from push-forward =
+        0.968543642678
+        0.580221110582
+        1.092965373300
+        0.250640282229
+        0.731414543779
+        0.252397811536
+
+de =
+        0.594073472562
+        0.520846110579
+        0.197688936164
+        0.375403844308
+        0.357021134303
+        0.356184921415
+
+dE =
+        0.705072432429
+        0.479848109568
+        0.127687977309
+        0.263932661797
+        0.307099644410
+        0.338054016477
+
+dS from AD =
+        1.349719621893
+        1.751709039532
+        1.340798936766
+        -0.027601318917
+        -0.553382183652
+        -0.172707056257
+
+dS from pull-back =
+        1.349719621893
+        1.751709039532
+        1.340798936766
+        -0.027601318917
+        -0.553382183652
+        -0.172707056257
+
+dtau from AD =
+        2.662096617697
+        2.515641893730
+        1.869327544899
+        0.750807688616
+        0.714042268606
+        0.712369842831
+
+dtau from push-forward =
+        2.662096617697
+        2.515641893730
+        1.869327544899
+        0.750807688616
+        0.714042268606
+        0.712369842831
+*/
