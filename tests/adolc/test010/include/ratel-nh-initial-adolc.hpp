@@ -90,5 +90,5 @@ void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, con
         if (i != j) hess[j][i] = hess[i][j];
       }
     }
-    for (int i=0; i<6; i++) for (int j=0; j<6; j++) if (i > 2) hess[i][j] /= 2.;
+    for (int i=3; i<6; i++) for (int j=0; j<6; j++) hess[i][j] /= 2.;
 };
