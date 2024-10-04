@@ -43,14 +43,14 @@ void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const dou
   auto Fa = new adouble[m];
   auto Fp = new double[m];
   trace_on(tag); // Start tracing floating point operations
-  for (int i=0; i<n; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
+  for (int i=0; i<n; i++) Ea[i] <<= Xp[i]; // Assign independent variables
   Fa[0] = StrainEnergy_ADOLC(Ea, lambda, mu); // Evaluate the body of the differentiated code
-  Fa[0] >>= Fp[0]; // Assign dXpendent variables
+  Fa[0] >>= Fp[0]; // Assign dependent variables
   trace_off();    // End of the active section
 
   // Compute the gradient
   gradient(tag, n, Xp, grad);
-  for (int i=0; i<n; i++) if (i>2) grad[i] /= 2.;
+  for (int i=3; i<n; i++) grad[i] /= 2.;
 };
 
 void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, const double mu) {
@@ -79,5 +79,5 @@ void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, con
         if (i != j) hess[j][i] = hess[i][j];
       }
     }
-    for (int i=0; i<n; i++) for (int j=0; j<n; j++) if (i > 2) hess[i][j] /= 2.;
+    for (int i=3; i<n; i++) for (int j=0; j<n; j++) hess[i][j] /= 2.;
 };
