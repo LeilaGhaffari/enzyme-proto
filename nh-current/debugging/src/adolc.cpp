@@ -33,11 +33,8 @@ int main() {
   MatMatMult(1.0, dudX, dXdx_initial, Grad_u);
 
   // Deformation Gradient : F = I + Grad_u
-  const double F[3][3] = {
-    {Grad_u[0][0] + 1, Grad_u[0][1],     Grad_u[0][2]    },
-    {Grad_u[1][0],     Grad_u[1][1] + 1, Grad_u[1][2]    },
-    {Grad_u[2][0],     Grad_u[2][1],     Grad_u[2][2] + 1}
-  };
+  double F[3][3];
+  DeformationGradient(Grad_u, F);
 
   // F^{-1} = dx_initial/dx
   double F_inv[3][3];
@@ -92,6 +89,10 @@ int main() {
   GreenEulerStrain_fwd(grad_du, b, de_sym);
   SymmetricMatUnpack(de_sym, de);
 
+  // dtau = (hessPsi : de) b + 2 gradPsi (I_4 : de)
+  //      = dGradPsi b + 2 gradPsi de
+  //      = dtau_1 + dtau_2
+
   // dGradPsi = hessPsi : de
   double dGradPsi[3][3], dGradPsi_sym[6] = {0.};
   for (int i=0; i<n; i++) for (int j=0; j<n; j++) dGradPsi_sym[i] += hessPsi_curr[i][j] * de_sym[j];
@@ -144,7 +145,7 @@ int main() {
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym[i]);
 
   double tau_sym_pf[6];
-  PushForward_symmetric(Grad_u, S_sym_ad, tau_sym_pf);
+  PushForward_symmetric(F, S_sym_ad, tau_sym_pf);
   printf("\n\ntau from push-forward =");
   for (int i=0; i<6; i++) printf("\n\t%.12lf", tau_sym_pf[i]);
 
