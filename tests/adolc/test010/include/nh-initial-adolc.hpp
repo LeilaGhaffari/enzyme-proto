@@ -9,15 +9,6 @@ adouble MatDetAM1Symmetric(adouble A_sym[6]) {
 
 adouble MatTraceSymmetric(adouble A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
 
-adouble VoigtDetAM1(const adouble V[6]) {
-    return V[0] * (V[1] * V[2] - V[3] * V[3]) +
-           V[5] * (V[3] * V[4] - V[5] * V[2]) +
-           V[4] * (V[5] * V[3] - V[4] * V[1]) +
-           V[0] + V[1] + V[2] +
-           V[0] * V[1] + V[0] * V[2] + V[1] * V[2] -
-           V[5] * V[5] - V[4] * V[4] - V[3] * V[3];
-};
-
 adouble Log1pSeries(adouble x) {
     adouble sum = 0;
     adouble y = x / (2. + x);
@@ -29,8 +20,6 @@ adouble Log1pSeries(adouble x) {
     }
     return 2 * sum;
 };
-
-adouble VoigtTrace(adouble V[6]) { return V[0] + V[1] + V[2]; }
 
 adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
   adouble E2_sym[6];
@@ -47,16 +36,13 @@ adouble StrainEnergy(adouble E_sym[6], const double lambda, const double mu) {
   return lambda * (J * J - 1) / 4 - lambda * logJ / 2 + mu * (-logJ + traceE);
 }
 
-void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const double mu) {
+void ComputeGradPsi(double grad[6], double Xp[6], const double lambda, const double mu, GradientData *data) {
   // Active section for AD
   int tag = 1;
-  auto Ea = new adouble[6];
-  auto Fa = new adouble[1];
-  auto Fp = new double[1];
   trace_on(tag); // Start tracing floating point operations
-  for (int i=0; i<6; i++) Ea[i] <<= Xp[i]; // Assign indXpendent variables
-  Fa[0] = StrainEnergy(Ea, lambda, mu); // Evaluate the body of the differentiated code
-  Fa[0] >>= Fp[0]; // Assign dXpendent variables
+  for (int i=0; i<6; i++) data->Ea[i] <<= Xp[i]; // Assign independent variables
+  data->Fa[0] = StrainEnergy(data->Ea, lambda, mu); // Evaluate the body of the differentiated code
+  data->Fa[0] >>= data->Fp[0]; // Assign dependent variables
   trace_off();    // End of the active section
 
   // Compute the gradient
@@ -68,10 +54,8 @@ void ComputeHessianPsi(double hess[6][6], double Xp[6], const double lambda, con
     // Active section for AD
     int tag = 1;
     trace_on(tag);
-    for (int i = 0; i < 6; i++) {
-        data->Xa[i] <<= Xp[i];
-    }
-    data->Fa[0] = StrainEnergy(data->Xa, lambda, mu);
+    for (int i = 0; i < 6; i++) data->Ea[i] <<= Xp[i];
+    data->Fa[0] = StrainEnergy(data->Ea, lambda, mu);
     data->Fa[0] >>= data->Fp[0];
     trace_off();
 

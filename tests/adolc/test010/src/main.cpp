@@ -16,7 +16,9 @@ int main() {
   };
 
   double stored_grad_u[3][3], stored_S_sym[6], f1[3][3];
-  f1_NeoHookeanInitial_AD_ADOLC(dXdx, dudX, stored_grad_u, stored_S_sym, f1);
+  GradientData *grad_data = new GradientData;
+  InitializeGradientData(grad_data);
+  f1_NeoHookeanInitial_AD_ADOLC(grad_data, dXdx, dudX, stored_grad_u, stored_S_sym, f1);
 
   // Jacobian evaluation
   double ddudX[3][3] = {
@@ -26,12 +28,13 @@ int main() {
   };
 
   double df1[3][3];
-  HessianData *data = new HessianData;
-  initializeHessianData(data);
-  df1_NeoHookeanInitial_AD_ADOLC(data, dXdx, ddudX, stored_grad_u, stored_S_sym, df1);
+  HessianData *hess_data = new HessianData;
+  initializeHessianData(hess_data);
+  df1_NeoHookeanInitial_AD_ADOLC(hess_data, dXdx, ddudX, stored_grad_u, stored_S_sym, df1);
 
   // Free allocated memory
-  freeHessianData(data);
+  freeGradientData(grad_data);
+  freeHessianData(hess_data);
 
   return 0;
 }
