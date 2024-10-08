@@ -3,8 +3,12 @@ ADOLC_INCLUDE ?=
 ADOLC_LIB ?=
 
 CC = clang-18
-CFLAGS = $(OPT) -Xclang -load -Xclang $(ENZYME_LIB) -Wall -Wextra -Wunused-variable -Wunused-function -Iinclude
+CFLAGS = $(OPT) -Wall -Wextra -Wunused-variable -Wunused-function -Iinclude
 LDFLAGS = -lm
+
+ifneq ($(ENZYME_LIB),)
+    CFLAGS += -Xclang -load -Xclang $(ENZYME_LIB)
+endif
 
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -Wunused-variable -Wunused-function -Iinclude -I$(ADOLC_INCLUDE)
