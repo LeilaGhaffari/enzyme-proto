@@ -42,12 +42,15 @@ $(TARGET_CPP): $(OBJ_CPP)
 	$(CXX) $(CXXFLAGS) -I$(ADOLC_INCLUDE) -I$(INCDIR) -L$(ADOLC_LIB) -o $@ $^ -ladolc
 
 # Compile source files to object files (C)
-$(BUILDDIR)/%.o: $(SRCDIR)/%.c
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile source files to object files (C++)
-$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -I$(ADOLC_INCLUDE) -I$(INCDIR) -c $< -o $@
+
+$(BUILDDIR):
+	mkdir -p $@
 
 # Clean rule
 clean:

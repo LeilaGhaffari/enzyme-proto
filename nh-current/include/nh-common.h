@@ -1,4 +1,4 @@
-
+// Helper functions
 int SymmetricMatUnpack(const double sym[6], double full[3][3]) {
   full[0][0] = sym[0];
   full[0][1] = sym[5];
@@ -10,7 +10,7 @@ int SymmetricMatUnpack(const double sym[6], double full[3][3]) {
   full[2][1] = sym[3];
   full[2][2] = sym[2];
   return 0;
-}
+};
 
 int SymmetricMatPack(const double full[3][3], double sym[6]) {
   sym[0] = full[0][0];
@@ -20,7 +20,7 @@ int SymmetricMatPack(const double full[3][3], double sym[6]) {
   sym[4] = full[0][2];
   sym[5] = full[0][1];
   return 0;
-}
+};
 
 int MatInverse(const double A[3][3], double det_A, double A_inv[3][3]) {
   double B[3][3] = {
@@ -35,7 +35,7 @@ int MatInverse(const double A[3][3], double det_A, double A_inv[3][3]) {
     }
   }
   return 0;
-}
+};
 
 int MatMatMult(double alpha, const double A[3][3], const double B[3][3], double C[3][3]) {
   for (int j = 0; j < 3; j++) {
@@ -47,7 +47,7 @@ int MatMatMult(double alpha, const double A[3][3], const double B[3][3], double 
     }
   }
   return 0;
-}
+};
 
 int MatComputeInverseSymmetric(const double A[3][3], const double det_A, double A_inv[6]) {
   // Compute A^(-1) : A-Inverse
@@ -74,7 +74,7 @@ double MatDetAM1Symmetric(const double A_sym[6]) {
          A_sym[5] * A_sym[5] - A_sym[4] * A_sym[4] - A_sym[3] * A_sym[3];
 };
 
-double MatTraceSymmetric(const double A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; }
+double MatTraceSymmetric(const double A_sym[6]) { return A_sym[0] + A_sym[1] + A_sym[2]; };
 
 
 double MatDetAM1(const double A[3][3]) {
@@ -118,11 +118,10 @@ int LinearStrain(const double grad_u[3][3], double e_sym[6]) {
   e_sym[4] = (grad_u[0][2] + grad_u[2][0]) / 2.;
   e_sym[5] = (grad_u[0][1] + grad_u[1][0]) / 2.;
   return 0;
-}
+};
 
 int GreenEulerStrain(const double grad_u[3][3], double e_sym[6]) {
   const int ind_j[6] = {0, 1, 2, 1, 0, 0}, ind_k[6] = {0, 1, 2, 2, 2, 1};
-
   LinearStrain(grad_u, e_sym);
   // Add (grad_u * grad_u^T)/2 term to the linear part of e_sym
   for (int m = 0; m < 6; m++) {
@@ -131,11 +130,10 @@ int GreenEulerStrain(const double grad_u[3][3], double e_sym[6]) {
     }
   }
   return 0;
-}
+};
 
 int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], double de_sym[6]) {
   const int ind_j[6] = {0, 1, 2, 1, 0, 0}, ind_k[6] = {0, 1, 2, 2, 2, 1};
-
   for (int m = 0; m < 6; m++) {
     de_sym[m] = 0;
     for (int n = 0; n < 3; n++) {
@@ -143,7 +141,7 @@ int GreenEulerStrain_fwd(const double grad_du[3][3], const double b[3][3], doubl
     }
   }
   return 0;
-}
+};
 
 double StrainEnergy(double e_sym[6], const double lambda, const double mu) {
   double e2_sym[6];
@@ -278,29 +276,6 @@ void MatTransposeMatMult(double alpha, const double A[3][3], const double B[3][3
       }
     }
   }
-}
-
-// E = .5(F^t F - I) not the pull-back operator
-void Compute_E_symmetric(double Grad_u[3][3], double E_sym[6]) {
-  // F = I + Grad_u
-  double F[3][3];
-  DeformationGradient(Grad_u, F);
-
-  double E[3][3];
-  MatTransposeMatMult(1., F, F, E);
-  for (int i=0; i<3; i++) E[i][i] -= 1.;
-  for (int i=0; i<3; i++) for (int j=0; j<3; j++) E[i][j] /= 2.;
-  SymmetricMatPack(E, E_sym);
-}
-
-void RatelGreenLagrangeStrain_fwd(const double grad_du[3][3], const double F[3][3], double dE_sym[6]) {
-  const int ind_j[6] = {0, 1, 2, 1, 0, 0}, ind_k[6] = {0, 1, 2, 2, 2, 1};
-  for (int m = 0; m < 6; m++) {
-    dE_sym[m] = 0;
-    for (int n = 0; n < 3; n++) {
-      dE_sym[m] += (grad_du[n][ind_j[m]] * F[n][ind_k[m]] + F[n][ind_j[m]] * grad_du[n][ind_k[m]]) / 2.;
-    }
-  }
 };
 
 // `C = alpha A + beta B` for 3x3 matrices
@@ -311,4 +286,4 @@ int MatMatAdd(double alpha, const double A[3][3], double beta, const double B[3]
     }
   }
   return 0;
-}
+};
