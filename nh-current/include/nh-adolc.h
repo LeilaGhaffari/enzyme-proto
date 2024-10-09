@@ -82,11 +82,13 @@ adouble StrainEnergy(adouble e_sym[6], const double lambda, const double mu) {
 }
 
 void ComputeGradPsi(double grad[6], double e_sym[6], NeoHookeanElasticityAdolcParams *data) {
+  double ep[6];
   for (int i = 0; i < 6; i++) data->ep[i] = e_sym[i];
   int tag = 1;
   trace_on(tag);
-  for (int i=0; i<6; i++) data->ea[i] <<= data->ep[i];
-  data->Fa[0] = StrainEnergy(data->ea, data->lambda, data->mu);
+  adouble ea[6];
+  for (int i=0; i<6; i++) ea[i] <<= data->ep[i];
+  data->Fa[0] = StrainEnergy(ea, data->lambda, data->mu);
   data->Fa[0] >>= data->Fp[0];
   trace_off();
   // Compute the gradient
@@ -99,8 +101,9 @@ void ComputeHessianPsi(double hess[6][6], double e_sym[6], NeoHookeanElasticityA
     int tag = 1;
     trace_on(tag);
     for (int i = 0; i < 6; i++) data->ea[i] <<= data->ep[i];
-    data->Fa[0] = StrainEnergy(data->ea, data->lambda, data->mu);
-    data->Fa[0] >>= data->Fp[0];
+    adouble Fa[1];
+    Fa[0] = StrainEnergy(data->ea, data->lambda, data->mu);
+    Fa[0] >>= data->Fp[0];
     trace_off();
     // Compute the hessian matrix
     hessian(tag, 6, data->ep, data->H);
