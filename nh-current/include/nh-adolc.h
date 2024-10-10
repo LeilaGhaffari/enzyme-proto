@@ -7,10 +7,6 @@
 
 // Define a struct to hold the variables
 typedef struct {
-  double *ep;
-  double* Fp;
-  adouble* ea;
-  adouble* Fa;
   double** H;
   double lambda;
   double mu;
@@ -20,10 +16,6 @@ typedef struct {
 void InitializeParamsData(NeoHookeanElasticityAdolcParams *data) {
     data->mu = 1;
     data->lambda = 1;
-    data->ep = new double[6];
-    data->Fp = new double[1];
-    data->ea = new adouble[6];
-    data->Fa = new adouble[1];
     data->H = (double**)malloc(6 * sizeof(double*));
     for (int i = 0; i < 6; i++) {
         data->H[i] = (double*)malloc((i + 1) * sizeof(double));
@@ -32,10 +24,6 @@ void InitializeParamsData(NeoHookeanElasticityAdolcParams *data) {
 
 // Free the memory allocated in the struct
 void FreeParamsData(NeoHookeanElasticityAdolcParams *data) {
-    delete[] data->ep;
-    delete[] data->Fp;
-    delete[] data->ea;
-    delete[] data->Fa;
     for (int i = 0; i < 6; i++) {
         free(data->H[i]);
     }
@@ -82,39 +70,38 @@ adouble StrainEnergy(adouble e_sym[6], const double lambda, const double mu) {
 }
 
 void ComputeGradPsi(double grad[6], double e_sym[6], NeoHookeanElasticityAdolcParams *data) {
-  double ep[6];
-  for (int i = 0; i < 6; i++) data->ep[i] = e_sym[i];
+  double Fp[1];
+  adouble ea[6], Fa[1];
   int tag = 1;
   trace_on(tag);
-  adouble ea[6];
-  for (int i=0; i<6; i++) ea[i] <<= data->ep[i];
-  data->Fa[0] = StrainEnergy(ea, data->lambda, data->mu);
-  data->Fa[0] >>= data->Fp[0];
+  for (int i=0; i<6; i++) ea[i] <<= e_sym[i];
+  Fa[0] = StrainEnergy(ea, data->lambda, data->mu);
+  Fa[0] >>= Fp[0];
   trace_off();
   // Compute the gradient
-  gradient(tag, 6, data->ep, grad);
+  gradient(tag, 6, e_sym, grad);
   for (int i=0; i<6; i++) if (i>2) grad[i] /= 2.;
 };
 
 void ComputeHessianPsi(double hess[6][6], double e_sym[6], NeoHookeanElasticityAdolcParams *data) {
-    for (int i = 0; i < 6; i++) data->ep[i] = e_sym[i];
-    int tag = 1;
-    trace_on(tag);
-    for (int i = 0; i < 6; i++) data->ea[i] <<= data->ep[i];
-    adouble Fa[1];
-    Fa[0] = StrainEnergy(data->ea, data->lambda, data->mu);
-    Fa[0] >>= data->Fp[0];
-    trace_off();
-    // Compute the hessian matrix
-    hessian(tag, 6, data->ep, data->H);
-    // Populate hess
-    for (int i=0; i<6; i++) {
-      for (int j=0; j<i+1; j++) {
-        hess[i][j] = data->H[i][j];
-        if (i != j) hess[j][i] = hess[i][j];
-      }
+  double Fp[1];
+  adouble ea[6], Fa[1];
+  int tag = 1;
+  trace_on(tag);
+  for (int i = 0; i < 6; i++) ea[i] <<= e_sym[i];
+  Fa[0] = StrainEnergy(ea, data->lambda, data->mu);
+  Fa[0] >>= Fp[0];
+  trace_off();
+  // Compute the hessian matrix
+  hessian(tag, 6, e_sym, data->H);
+  // Populate hess
+  for (int i=0; i<6; i++) {
+    for (int j=0; j<i+1; j++) {
+      hess[i][j] = data->H[i][j];
+      if (i != j) hess[j][i] = hess[i][j];
     }
-    for (int i=3; i<6; i++) for (int j=0; j<6; j++) hess[i][j] /= 2.;
+  }
+  for (int i=3; i<6; i++) for (int j=0; j<6; j++) hess[i][j] /= 2.;
 }
 
 // Residual Evaluation
