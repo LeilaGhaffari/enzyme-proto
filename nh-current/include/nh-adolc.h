@@ -7,7 +7,6 @@
 
 // Define a struct to hold the variables
 typedef struct {
-  double** H;
   double lambda;
   double mu;
 } NeoHookeanElasticityAdolcParams;
@@ -16,18 +15,10 @@ typedef struct {
 void InitializeParamsData(NeoHookeanElasticityAdolcParams *data) {
     data->mu = 1;
     data->lambda = 1;
-    data->H = (double**)malloc(6 * sizeof(double*));
-    for (int i = 0; i < 6; i++) {
-        data->H[i] = (double*)malloc((i + 1) * sizeof(double));
-    }
 }
 
 // Free the memory allocated in the struct
 void FreeParamsData(NeoHookeanElasticityAdolcParams *data) {
-    for (int i = 0; i < 6; i++) {
-        free(data->H[i]);
-    }
-    free(data->H);
     delete data;
 }
 
@@ -93,11 +84,13 @@ void ComputeHessianPsi(double hess[6][6], double e_sym[6], NeoHookeanElasticityA
   Fa[0] >>= Fp[0];
   trace_off();
   // Compute the hessian matrix
-  hessian(tag, 6, e_sym, data->H);
+  double buf[21];
+  double *H[6] = {&buf[0], &buf[1], &buf[3], &buf[6], &buf[10], &buf[15]};
+  hessian(tag, 6, e_sym, H);
   // Populate hess
   for (int i=0; i<6; i++) {
     for (int j=0; j<i+1; j++) {
-      hess[i][j] = data->H[i][j];
+      hess[i][j] = H[i][j];
       if (i != j) hess[j][i] = hess[i][j];
     }
   }
