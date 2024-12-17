@@ -1,20 +1,35 @@
 // This program takes a list of numbers, computes their sum, and prints the average.
 
-fn main() {
-    let mut numbers = vec![1, 2, 3, 4, 5];
-    let mult_const = 2;
-    let avg = compute_avg(&mut numbers, mult_const);
-    println!("The average of {:?} is: {}", numbers, avg/mult_const);
+struct Point2D {
+    x: f64,
+    y: f64
 }
-
-fn compute_sum(numbers: &mut [i32], mult_const: i32) -> i32 {
-    for n in numbers.iter_mut() {
-        *n *= mult_const;
+impl Point2D {
+    fn scale(&mut self, mult_const: f64) {
+        self.x *= mult_const;
+        self.y *= mult_const;
     }
-    numbers.iter().sum()
+    fn norm1(&self) -> f64 {
+        self.x + self.y
+    }
 }
 
-fn compute_avg(numbers: &mut [i32], mult_const: i32) -> i32 {
-    let size = numbers.len() as i32;
-    compute_sum(numbers, mult_const) / size
+fn add_points(p1: Point2D, p2: Point2D) -> Point2D {
+    Point2D {
+        x: p1.x + p2.x,
+        y: p1.y + p2.y,
+    }
 }
+
+fn main() {
+    let mut point1 = Point2D { x: 1.1, y: 2.2 };
+    let mut point2 = Point2D { x: 2.2, y: 4.4};
+    point1.scale(2.0);
+    point2.scale(1.0);
+    let psum = add_points(point1, point2);
+    println!(
+        "The 1-norm of the sum of two scaled points is: {}",
+        psum.norm1()
+    );
+}
+
