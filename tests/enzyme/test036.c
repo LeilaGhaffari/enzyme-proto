@@ -47,7 +47,7 @@ void RatelKirchhofftau_sym_IsochoricOgden_AD(const double bulk, const int N, con
 }
 
 // Compute d \tau
-void Rateldtau_fwd(const double bulk, const double N, const double *m, const double *alpha, double e_sym[6], double de_sym[6], double tau_sym[6],
+void Rateldtau_fwd(const double bulk, const int N, const double *m, const double *alpha, double e_sym[6], double de_sym[6], double tau_sym[6],
                    double dtau_sym[6]) {
   __enzyme_fwddiff((void *)RatelKirchhofftau_sym_IsochoricOgden_AD, enzyme_const, bulk, enzyme_const, N, enzyme_const, m, enzyme_const, alpha, e_sym,
                    de_sym, tau_sym, dtau_sym);
