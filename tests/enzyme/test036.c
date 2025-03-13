@@ -15,9 +15,19 @@ double RatelStrainEnergy_IsochoricOgdenCurrentAD_Enzyme(const double bulk, const
 
   RatelScalarVecMult(J_pow, pr_str, pr_str_bar);
   VolumetricFunctionAndDerivatives(J - 1., &V, NULL, NULL);
-  RatelStrainEnergy_IsochoricOgden(V, bulk, N, m, alpha, pr_str_bar, &strain_energy);
 
-  return strain_energy;
+  double omega[3], energy_iso = 0.;
+  // energy_iso = sum_{j=1:3} omega[j] = sum_{j=1:3} (sum_{k=1:N} m_k/alpha_k (pr_bar_j^alpha_k - 1))
+  for (int j = 0; j < 3; j++) {
+    omega[j] = 0;
+    for (int k = 0; k < N; k++) {
+      omega[j] += (m[k] / alpha[k]) * (pow(pr_str_bar[j], alpha[k]) - 1.);
+    }
+    energy_iso += omega[j];
+  }
+
+  // Strain energy psi(e) for Ogden
+  return bulk * V + energy_iso;
 }
 
 // -- Enzyme-AD
@@ -79,3 +89,11 @@ int main() {
 
   return 0;
 }
+
+/*
+Strain Energy = 0.421338
+
+0.090270        0.685211        0.581716        0.856592        0.089502        0.124111
+
+1.529920        1.113393        1.719482        -0.392328       0.119887        0.139680
+*/
