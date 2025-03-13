@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define RATEL_EPSILON_DOUBLE 1e-16
 #define RatelMax(a, b) ((a) > (b) ? (a) : (b))

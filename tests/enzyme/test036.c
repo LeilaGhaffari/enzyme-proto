@@ -2,7 +2,7 @@
 
 // Strain Energy
 double RatelStrainEnergy_IsochoricOgdenCurrentAD_Enzyme(const double bulk, const int N, const double *m, const double *alpha, double e_sym[6]) {
-  double e2_sym[6], e_vals[3], pr_str[3], pr_str_bar[3], V, strain_energy;
+  double e2_sym[6], e_vals[3], pr_str[3], pr_str_bar[3], V;
 
   // J
   for (int i = 0; i < 6; i++) e2_sym[i] = 2 * e_sym[i];
@@ -16,6 +16,8 @@ double RatelStrainEnergy_IsochoricOgdenCurrentAD_Enzyme(const double bulk, const
   RatelScalarVecMult(J_pow, pr_str, pr_str_bar);
   VolumetricFunctionAndDerivatives(J - 1., &V, NULL, NULL);
 
+  // RatelStrainEnergy_IsochoricOgden(V, bulk, N, m, alpha, pr_str_bar, &strain_energy);
+  // It worked by copying over the content of RatelStrainEnergy_IsochoricOgden()!!!
   double omega[3], energy_iso = 0.;
   // energy_iso = sum_{j=1:3} omega[j] = sum_{j=1:3} (sum_{k=1:N} m_k/alpha_k (pr_bar_j^alpha_k - 1))
   for (int j = 0; j < 3; j++) {
@@ -26,7 +28,6 @@ double RatelStrainEnergy_IsochoricOgdenCurrentAD_Enzyme(const double bulk, const
     energy_iso += omega[j];
   }
 
-  // Strain energy psi(e) for Ogden
   return bulk * V + energy_iso;
 }
 
@@ -64,10 +65,23 @@ void Rateldtau_fwd(const double bulk, const int N, const double *m, const double
 }
 
 int main() {
-  // Constants
-  double bulk = 1.0, m[3] = {.1, .2, .3}, alpha[3] = {1., 2., 3.};
-  int    N = 3;
+  double bulk = 1.;
+  int    N    = 3;
 
+  // Get N from the user
+  printf("Enter N: ");
+  scanf("%d", &N);
+
+  // Allocate memory for m and alpha based on N
+  double *m     = (double *)malloc(N * sizeof(double));
+  double *alpha = (double *)malloc(N * sizeof(double));
+
+  for (int i = 0; i < N; i++) {
+    m[i]     = .1 * (i + 1.);
+    alpha[i] = i + 1.;
+  }
+
+  // Constants for strain
   double e_sym[6]  = {0.0702417, 0.4799115, 0.3991242, 0.6756593, 0.0633284, 0.0959267};
   double de_sym[6] = {0.1425560, 0.115120, 0.551640, 0.0591922, 0.123535, 0.166572};
 
@@ -87,10 +101,15 @@ int main() {
   for (int j = 0; j < 6; j++) printf("%f\t", dtau_sym[j]);
   printf("\n\n");
 
+  // Free allocated memory
+  free(m);
+  free(alpha);
+
   return 0;
 }
 
 /*
+# N =3
 Strain Energy = 0.421338
 
 0.090270        0.685211        0.581716        0.856592        0.089502        0.124111
