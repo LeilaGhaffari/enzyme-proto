@@ -6,6 +6,7 @@
 *.exe
 *.json
 *.log
+*.asv
 .ipynb_checkpoints
 build
 exec
